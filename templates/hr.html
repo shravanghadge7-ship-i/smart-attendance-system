@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>HR Dashboard</title>
+
+<style>
+
+body{
+background:#0f172a;
+color:white;
+font-family:Arial;
+padding:25px;
+}
+
+/* ===== HEADER ===== */
+.header{
+display:flex;
+justify-content:space-between;
+align-items:center;
+margin-bottom:20px;
+}
+
+/* ===== CARDS ===== */
+.card{
+background:#1e293b;
+padding:18px;
+margin-bottom:20px;
+border-radius:12px;
+box-shadow:0 5px 15px rgba(0,0,0,.3);
+}
+
+/* ===== BUTTONS ===== */
+button{
+padding:10px 14px;
+border:none;
+border-radius:8px;
+cursor:pointer;
+font-weight:bold;
+}
+
+.approve{
+background:#16a34a;
+color:white;
+}
+
+.reject{
+background:#dc2626;
+color:white;
+}
+
+.logout{
+background:#ef4444;
+color:white;
+}
+
+/* ===== HR ACTION BUTTON ===== */
+.hr-btn{
+background:#2563eb;
+color:white;
+padding:12px 18px;
+border-radius:10px;
+font-size:15px;
+}
+
+.hr-btn:hover{
+background:#1d4ed8;
+}
+
+/* ===== FORM ===== */
+textarea{
+width:100%;
+padding:10px;
+margin-top:8px;
+border-radius:8px;
+border:none;
+resize:none;
+}
+
+select{
+padding:10px;
+border-radius:8px;
+margin-bottom:20px;
+}
+
+/* ===== STATUS BADGE ===== */
+.status{
+padding:4px 10px;
+border-radius:6px;
+font-size:13px;
+}
+
+.pending{background:#f59e0b;}
+.approved{background:#16a34a;}
+.rejected{background:#dc2626;}
+
+</style>
+</head>
+
+<body>
+
+<!-- ================= HEADER ================= -->
+
+<div class="header">
+<h2>HR Dashboard <span id="notify">🔔 0</span></h2>
+
+<button onclick="sendAbsentMsg()" class="hr-btn">
+📩 Send Absent Messages
+</button>
+</div>
+
+<!-- ================= FILTER ================= -->
+
+<form method="GET" action="/hr">
+<select name="emp_id" onchange="this.form.submit()">
+<option value="">All Employees</option>
+
+{% for e in employees %}
+<option value="{{e}}">{{e}}</option>
+{% endfor %}
+
+</select>
+</form>
+
+<h3>Total Leave Requests: {{ leaves|length }}</h3>
+
+<!-- ================= LEAVE LIST ================= -->
+
+{% for l in leaves %}
+
+<div class="card">
+
+<h3>👤 {{l.emp_id}}</h3>
+
+<p><b>Leave:</b> {{l.from_date}} → {{l.to_date}}</p>
+<p><b>Reason:</b> {{l.reason}}</p>
+
+<p>
+<b>Status:</b>
+
+{% if l.status == "Pending" %}
+<span class="status pending">Pending</span>
+{% elif l.status == "Approved" %}
+<span class="status approved">Approved</span>
+{% else %}
+<span class="status rejected">Rejected</span>
+{% endif %}
+
+</p>
+
+{% if l.status == "Pending" %}
+
+<form method="POST" action="/approve/{{l.id}}">
+<textarea name="reason" placeholder="Approval Message" required></textarea>
+<button class="approve">Approve</button>
+</form>
+
+<form method="POST" action="/reject/{{l.id}}">
+<textarea name="reason" placeholder="Rejection Message" required></textarea>
+<button class="reject">Reject</button>
+</form>
+
+{% else %}
+<p><b>HR Message:</b> {{l.hr_reason}}</p>
+{% endif %}
+
+</div>
+
+{% endfor %}
+
+<!-- ================= JAVASCRIPT ================= -->
+
+<script>
+
+/* ===== HR NOTIFICATION COUNTER ===== */
+function checkNotify(){
+fetch("/hr_notifications")
+.then(r=>r.json())
+.then(d=>{
+document.getElementById("notify").innerText="🔔 "+d.pending;
+});
+}
+
+setInterval(checkNotify,5000);
+checkNotify();
+
+/* ===== SEND ABSENT MESSAGE ===== */
+
+function sendAbsentMsg(){
+
+if(!confirm("Send absent messages to all employees?"))
+return;
+
+fetch("/send_absent_sms",{
+method:"POST"
+})
+.then(r=>r.json())
+.then(d=>{
+alert(d.msg);
+})
+.catch(()=>{
+alert("Error sending messages");
+});
+
+}
+
+</script>
+
+</body>
+</html>

@@ -1,0 +1,1344 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Admin Panel - Mahendra Corporation</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<style>
+body{
+margin:0;
+font-family:Segoe UI;
+background:#0f172a;
+color:#e2e8f0;
+}
+
+/* ===== SIDEBAR ===== */
+
+.sidebar{
+width:260px;
+height:100vh;
+position:fixed;
+background:linear-gradient(180deg,#0f172a,#020617);
+padding-top:30px;
+border-right:1px solid #1e293b;
+}
+
+.sidebar h2{
+font-size:20px;
+letter-spacing:1px;
+font-weight:600;
+}
+
+.sidebar a{
+display:flex;
+align-items:center;
+gap:12px;
+padding:14px 22px;
+color:#94a3b8;
+font-size:15px;
+font-weight:500;
+border-left:3px solid transparent;
+transition:.25s;
+text-decoration:none;
+white-space:nowrap;
+}
+
+.sidebar a:hover{
+background:#1e293b;
+border-left:3px solid #3b82f6;
+padding-left:30px;
+}
+
+.activeMenu{
+background:#1e293b;
+border-left:3px solid #3b82f6;
+color:white;
+}
+
+/* ===== MAIN ===== */
+
+.main{
+margin-left:260px;
+padding:30px;
+transition:.3s;
+}
+
+/* ===== TOPBAR ===== */
+
+.topbar{
+display:flex;
+justify-content:space-between;
+align-items:center;
+margin-bottom:40px;
+padding-bottom:15px;
+border-bottom:1px solid #1e293b;
+}
+
+.topbar h1{
+font-size:26px;
+font-weight:600;
+letter-spacing:.5px;
+}
+
+.admin-badge{
+background:#2563eb;
+padding:6px 12px;
+border-radius:20px;
+font-size:13px;
+}
+
+/* ===== KPI CARDS ===== */
+
+.kpi-row{
+display:grid;
+grid-template-columns:repeat(auto-fit,minmax(200px,1fr));
+gap:20px;
+margin-bottom:30px;
+}
+
+.kpi{
+background:linear-gradient(145deg,#1e293b,#111827);
+padding:25px;
+border-radius:14px;
+text-align:left;
+box-shadow:0 10px 25px rgba(0,0,0,.5);
+transition:.3s;
+}
+
+.kpi:hover{
+transform:translateY(-6px);
+}
+
+.kpi h3{
+font-size:13px;
+color:#94a3b8;
+letter-spacing:.5px;
+text-transform:uppercase;
+}
+
+.kpi .value{
+font-size:30px;
+margin-top:10px;
+font-weight:600;
+letter-spacing:1px;
+}
+
+.kpi:nth-child(1) .value{ color:#3b82f6; }
+.kpi:nth-child(2) .value{ color:#22c55e; }
+.kpi:nth-child(3) .value{ color:#f59e0b; }
+.kpi:nth-child(4) .value{ color:#ef4444; }
+
+/* ===== GRID ===== */
+
+.grid{
+display:grid;
+grid-template-columns: 2fr 1fr;
+gap:25px;
+}
+
+@media(max-width:1000px){
+.grid{
+grid-template-columns:1fr;
+}
+}
+
+.card{
+background:#111827;
+padding:25px;
+border-radius:14px;
+border:1px solid #1f2937;
+box-shadow:0 10px 30px rgba(0,0,0,.4);
+}
+
+.card h3{
+margin-bottom:15px;
+}
+
+.card:hover{
+transform:translateY(-6px);
+box-shadow:0 15px 40px rgba(0,0,0,.6);
+}
+
+/* ===== TABLE ===== */
+
+.table-card{
+background:#1e293b;
+padding:20px;
+border-radius:12px;
+margin-top:20px;
+}
+
+table{
+width:100%;
+border-collapse:collapse;
+}
+
+th,td{
+padding:10px;
+border-bottom:1px solid #334155;
+text-align:center;
+}
+
+th{
+background:#0b1120;
+}
+
+th{
+background:#0f172a;
+font-weight:600;
+letter-spacing:.5px;
+}
+
+td{
+color:#cbd5e1;
+}
+
+tbody tr{
+transition:.2s;
+}
+
+/* ===== FILTER BAR ===== */
+
+.filter-bar{
+display:flex;
+gap:15px;
+margin-bottom:15px;
+}
+
+
+.filter-bar input, 
+.filter-bar select{
+padding:10px;
+border-radius:8px;
+border:1px solid #334155;
+background:#0f172a;
+color:white;
+outline:none;
+}
+
+/* ===== BUTTON ===== */
+.btn{
+background:#3b82f6;
+color:white;
+border:none;
+padding:10px 16px;
+border-radius:8px;
+font-weight:500;
+cursor:pointer;
+transition:.3s;
+}
+
+.btn:hover{
+background:#2563eb;
+transform:translateY(-2px);
+}
+
+
+tbody tr:hover{
+background:#334155;
+transition:.2s;
+}
+
+.card{
+transition:.3s;
+}
+
+.card:hover{
+transform:translateY(-4px);
+}
+
+/* ===== CARD HEADER ===== */
+
+.card-header{
+margin-bottom:15px;
+}
+
+.sub-text{
+font-size:12px;
+color:#94a3b8;
+}
+
+.flex-between{
+display:flex;
+justify-content:space-between;
+align-items:center;
+}
+
+/* ===== STATUS CHART CENTER ===== */
+
+.status-card{
+min-height:360px;
+display:flex;
+flex-direction:column;
+}
+
+.chart-center{
+flex:1;
+display:flex;
+justify-content:center;
+align-items:center;
+}
+
+.chart-center canvas{
+max-width:240px;
+max-height:240px;
+}
+
+/* ===== MONTHLY FULL WIDTH ===== */
+
+.chart-full{
+height:320px;
+}
+
+.chart-full canvas{
+width:100% !important;
+height:100% !important;
+}
+
+/* ===== YEAR SWITCH ===== */
+
+.year-switch{
+display:flex;
+align-items:center;
+gap:10px;
+font-weight:600;
+}
+
+.year-btn{
+background:#1e293b;
+border:1px solid #334155;
+color:white;
+padding:6px 10px;
+border-radius:6px;
+cursor:pointer;
+}
+
+.year-btn:hover{
+background:#2563eb;
+}
+
+.menu-title{
+display:flex;
+align-items:center;
+gap:12px;
+padding:14px 22px;
+cursor:pointer;
+color:#94a3b8;
+font-weight:500;
+border-left:3px solid transparent;
+transition:.25s;
+}
+
+.menu-title:hover{
+background:#1e293b;
+border-left:3px solid #3b82f6;
+padding-left:26px;
+}
+
+.menu-title:hover{
+background:#1e293b;
+}
+
+.submenu{
+display:none;
+padding-left:35px;
+}
+
+.submenu a{
+display:block;
+font-size:14px;
+padding:10px 0;
+color:#cbd5e1;
+background:none;
+border:none;
+}
+
+#menuBtn{
+background:#1e293b;
+color:white;
+border:none;
+font-size:18px;
+padding:8px 12px;
+border-radius:6px;
+cursor:pointer;
+}
+
+#menuBtn:hover{
+background:#2563eb;
+}
+
+.sidebar.collapsed{
+width:70px;
+}
+
+.sidebar.collapsed a span,
+.sidebar.collapsed .menu-title span{
+display:none;
+}
+
+
+.sidebar.collapsed .submenu{
+display:none !important;
+}
+
+
+.main.collapsed{
+margin-left:80px;
+}
+
+.form-grid{
+display:grid;
+grid-template-columns:repeat(auto-fit,minmax(250px,1fr));
+gap:15px;
+margin-top:20px;
+}
+
+.form-grid input,
+.form-grid select{
+padding:12px;
+border-radius:8px;
+border:1px solid #334155;
+background:#ffffff;
+color:white;
+}
+
+</style>
+</head>
+
+<body>
+
+<div class="sidebar" id="sidebar">
+
+<a onclick="openTab('dashboard')">
+📊 <span>Dashboard</span>
+</a>
+
+<div class="menu">
+<div class="menu-title" onclick="toggleMenu(this)">
+👨‍💼 Employees
+</div>
+
+<div class="submenu">
+
+<a onclick="openTab('addEmployee')">
+➕ <span>Add Employee</span>
+</a>
+
+<a onclick="openTab('addProfile')">
+👤 <span>Add Profile</span>
+</a>
+
+<a onclick="openTab('updateEmployee')">
+✏ <span>Update Employee</span>
+</a>
+
+<a onclick="openTab('updateProfile')">
+🛠 <span>Update Profile</span>
+</a>
+
+</div>
+</div>
+
+<div class="menu">
+<div class="menu-title" onclick="toggleMenu(this)">
+📅 Attendance
+</div>
+
+<div class="submenu">
+<a onclick="openTab('todayAttendance')">🕒 Today Attendance</a>
+<a onclick="openTab('monthlyReport')">📊 Monthly Report</a>
+</div>
+</div>
+
+<a onclick="openTab('leaveRequests')">📝 Leave Requests</a>
+<a onclick="openTab('departments')">🏢 Departments</a>
+<a onclick="openTab('reports')">📈 Reports</a>
+<a onclick="openTab('settings')">⚙ Settings</a>
+
+<a href="/logout">🚪 Logout</a>
+
+</div>
+
+<div class="main">
+
+<div class="topbar">
+
+<div style="display:flex;align-items:center;gap:15px">
+<button id="menuBtn" onclick="toggleSidebar()">☰</button>
+<h1 id="sectionTitle">Dashboard Overview</h1>
+</div>
+
+<div class="admin-badge">ADMIN</div>
+
+</div>
+<!-- ================= DASHBOARD ================= -->
+
+<div id="dashboard">
+
+<div class="kpi-row">
+<div class="kpi"><h3>Total Employees</h3><div class="value" id="totalEmp">0</div></div>
+<div class="kpi"><h3>Present Today</h3><div class="value" id="presentToday">0</div></div>
+<div class="kpi"><h3>Late Today</h3><div class="value" id="lateToday">0</div></div>
+<div class="kpi"><h3>Absent Today</h3><div class="value" id="absentToday">0</div></div>
+</div>
+
+<div class="grid">
+
+<!-- Attendance Distribution -->
+<div class="card status-card">
+
+<div class="card-header">
+<h3>Attendance Distribution</h3>
+<span class="sub-text">Today's Overview</span>
+</div>
+
+<div class="chart-center">
+<canvas id="statusChart"></canvas>
+</div>
+
+</div>
+
+
+<!-- Monthly Attendance -->
+<div class="card">
+
+<div class="card-header flex-between">
+<h3>Yearly Attendance Percentage</h3>
+
+<div class="year-switch">
+<button class="year-btn" onclick="changeYear(-1)">◀</button>
+<span id="currentYear"></span>
+<button class="year-btn" onclick="changeYear(1)">▶</button>
+</div>
+
+</div>
+
+<div class="chart-full">
+<canvas id="monthlyChart"></canvas>
+</div>
+
+</div>
+
+</div>
+
+</div>
+
+
+<!-- ADD EMPLOYEE -->
+<div id="addEmployee" style="display:none">
+
+<div class="card">
+
+<h3>Create Employee Login</h3>
+
+<div class="form-grid">
+
+<input id="login_emp_id" placeholder="Employee ID">
+
+<input id="login_password" placeholder="Password">
+
+<select id="login_role">
+<option value="employee">Employee</option>
+<option value="hr">HR</option>
+<option value="admin">Admin</option>
+</select>
+
+<input id="login_photo" placeholder="Photo URL">
+
+</div>
+
+<br>
+
+<button class="btn" onclick="createEmployee()">Create Login</button>
+
+</div>
+
+</div>
+
+
+<!-- ADD PROFILE -->
+<div id="addProfile" style="display:none">
+
+<div class="card">
+
+<h3>Add Employee Profile</h3>
+
+<div class="form-grid">
+
+<input id="emp_id" placeholder="Employee ID">
+
+<input id="name" placeholder="Full Name">
+
+<input id="email" placeholder="Email">
+
+<input id="mobile" placeholder="Mobile Number">
+
+<input id="department" placeholder="Department">
+
+<select id="gender">
+<option value="">Select Gender</option>
+<option>Male</option>
+<option>Female</option>
+</select>
+
+<input type="date" id="dob">
+
+<input id="address" placeholder="Address">
+
+<input id="father" placeholder="Father Name">
+
+<input id="pan" placeholder="PAN Number">
+
+<input id="aadhaar" placeholder="Aadhaar Number">
+
+<input id="uan" placeholder="UAN Number">
+
+</div>
+
+<br>
+
+<button class="btn" onclick="saveProfile()">Save Profile</button>
+
+</div>
+
+</div>
+
+
+<!-- UPDATE EMPLOYEE -->
+<div id="updateEmployee" style="display:none">
+<div class="card">
+<h3>Update Employee</h3>
+<p>Edit employee basic details.</p>
+</div>
+</div>
+
+
+<!-- UPDATE PROFILE -->
+<div id="updateProfile" style="display:none">
+
+<div class="card">
+
+<h3>Update Employee Profile</h3>
+
+<div class="form-grid">
+
+<input id="u_emp_id" placeholder="Employee ID">
+
+<input id="u_name" placeholder="Full Name">
+
+<input id="u_email" placeholder="Email">
+
+<input id="u_mobile" placeholder="Mobile Number">
+
+<input id="u_department" placeholder="Department">
+
+<select id="u_gender">
+<option value="">Select Gender</option>
+<option>Male</option>
+<option>Female</option>
+</select>
+
+<input type="date" id="u_dob">
+
+<input id="u_address" placeholder="Address">
+
+<input id="u_father" placeholder="Father Name">
+
+<input id="u_pan" placeholder="PAN Number">
+
+<input id="u_aadhaar" placeholder="Aadhaar Number">
+
+<input id="u_uan" placeholder="UAN Number">
+
+</div>
+
+<br>
+
+<button class="btn" onclick="loadEmployee()">Load Employee</button>
+<button class="btn" onclick="updateProfile()">Update Profile</button>
+
+</div>
+
+</div>
+
+<!-- ================= ATTENDANCE ================= -->
+
+<div id="attendance" style="display:none">
+
+<div class="filter-bar">
+<input type="date" id="filterDate">
+
+<select id="filterDept">
+<option value="">All Departments</option>
+</select>
+
+<button class="btn" onclick="loadAttendance()">Filter</button>
+<button class="btn" onclick="exportCSV()">Export CSV</button>
+</div>
+
+<div class="table-card">
+<table>
+<thead>
+<tr>
+<th>Emp ID</th>
+<th>Name</th>
+<th>Department</th>
+<th>Date</th>
+<th>Check In</th>
+<th>Status</th>
+</tr>
+</thead>
+<tbody id="attendanceTable"></tbody>
+</table>
+</div>
+
+</div>
+
+<!-- ================= TODAY ATTENDANCE ================= -->
+
+<div id="todayAttendance" style="display:none">
+
+<div class="table-card">
+
+<h3>Today's Attendance</h3>
+
+<table>
+<thead>
+<tr>
+<th>Emp ID</th>
+<th>Name</th>
+<th>Department</th>
+<th>Date</th>
+<th>Check In</th>
+<th>Status</th>
+</tr>
+</thead>
+
+<tbody id="todayAttendanceTable"></tbody>
+
+</table>
+
+</div>
+
+</div>
+
+
+
+<!-- ================= MONTHLY ATTENDANCE ================= -->
+
+<div id="monthlyReport" style="display:none">
+
+<div class="filter-bar">
+
+<input type="month" id="monthFilter">
+
+<select id="deptFilter">
+<option value="">All Departments</option>
+</select>
+
+<button class="btn" onclick="loadMonthlyAttendance()">Load</button>
+
+</div>
+
+<div class="table-card">
+
+<table>
+<thead>
+<tr>
+<th>Emp ID</th>
+<th>Name</th>
+<th>Department</th>
+<th>Date</th>
+<th>Check In</th>
+<th>Status</th>
+</tr>
+</thead>
+
+<tbody id="monthlyAttendanceTable"></tbody>
+
+</table>
+
+</div>
+
+</div>
+<!-- ================= REPORTS ================= -->
+
+<div id="reports" style="display:none">
+
+<div class="grid">
+
+<div class="card">
+<h3>Yearly Attendance Trend</h3>
+<canvas id="yearChart"></canvas>
+</div>
+
+<div class="card">
+<h3>Department Performance</h3>
+<canvas id="deptChart"></canvas>
+</div>
+
+</div>
+
+</div>
+
+</div>
+
+<script>
+
+/* ===== SECTION SWITCH ===== */
+function showSection(id){
+
+document.getElementById("dashboard").style.display="none";
+document.getElementById("attendance").style.display="none";
+document.getElementById("reports").style.display="none";
+
+document.getElementById(id).style.display="block";
+
+document.getElementById("sectionTitle").innerText =
+id==="dashboard" ? "Dashboard Overview" :
+id==="attendance" ? "Attendance Management" :
+"Reports & Analytics";
+
+/* Sidebar active switch */
+document.querySelectorAll(".sidebar a").forEach(link=>{
+link.classList.remove("activeMenu");
+});
+document.getElementById("menu-" + id).classList.add("activeMenu");
+
+if(id==="dashboard") loadDashboard();
+if(id==="attendance") loadAttendance();
+if(id==="reports") loadReports();
+}
+
+
+/* ===== LOAD DASHBOARD ===== */
+
+
+let statusChart;
+let monthlyChart;
+let selectedYear = new Date().getFullYear();
+
+function loadDashboard(){
+
+document.getElementById("currentYear").innerText = selectedYear;
+
+fetch(`/admin_yearly_percentage?year=${selectedYear}`)
+.then(res=>res.json())
+.then(data=>{
+
+// KPI
+document.getElementById("totalEmp").innerText = data.total_employees;
+document.getElementById("presentToday").innerText = data.present_today;
+document.getElementById("lateToday").innerText = data.late_today;
+document.getElementById("absentToday").innerText = data.absent_today;
+
+
+// ===== STATUS CHART =====
+if(statusChart) statusChart.destroy();
+
+statusChart = new Chart(
+document.getElementById("statusChart"),{
+type:"doughnut",
+data:{
+labels:["Present","Late","Absent"],
+datasets:[{
+data:[
+data.present_today,
+data.late_today,
+data.absent_today
+],
+backgroundColor:["#22c55e","#f59e0b","#ef4444"],
+borderWidth:0,
+hoverOffset:6
+}]
+},
+options:{
+cutout:"65%",
+plugins:{legend:{position:"bottom"}},
+responsive:true
+}
+});
+
+
+// ===== MONTHLY YEARLY CHART =====
+if(monthlyChart) monthlyChart.destroy();
+
+monthlyChart = new Chart(
+document.getElementById("monthlyChart"),{
+type:"bar",
+data:{
+labels:["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"],
+datasets:[{
+label:"Attendance %",
+data:data.monthly_percentage,
+backgroundColor:"#3b82f6",
+borderRadius:8
+}]
+},
+options:{
+plugins:{legend:{display:false}},
+scales:{
+y:{
+beginAtZero:true,
+max:100
+}
+}
+}
+});
+
+});
+}
+
+
+/* ===== LOAD ATTENDANCE ===== */
+function loadAttendance(){
+
+let date = document.getElementById("filterDate").value;
+let dept = document.getElementById("filterDept").value;
+
+fetch(`/admin_attendance?date=${date}&department=${dept}`)
+.then(res=>res.json())
+.then(data=>{
+
+let table = document.getElementById("attendanceTable");
+table.innerHTML="";
+
+if(data.length===0){
+table.innerHTML="<tr><td colspan='5'>No Data</td></tr>";
+return;
+}
+
+data.forEach(emp=>{
+
+let color =
+emp.status==="Late"?"#f59e0b":
+emp.status==="Absent"?"#ef4444":
+"#22c55e";
+
+table.innerHTML+=`
+<tr>
+<td>${emp.emp_id}</td>
+<td>${emp.name}</td>
+<td>${emp.department}</td>
+<td>${emp.date || "-"}</td>
+<td>${emp.checkin || "-"}</td>
+<td style="color:${color};font-weight:600">
+${emp.status}
+</td>
+</tr>
+`;
+
+});
+
+});
+}
+
+
+/* ===== REPORTS ===== */
+let deptChart;
+let yearChart;
+
+function loadReports(){
+
+fetch("/admin_department_stats")
+.then(res=>res.json())
+.then(deptData=>{
+
+if(deptChart) deptChart.destroy();
+
+deptChart = new Chart(
+document.getElementById("deptChart"),{
+type:"doughnut",
+data:{
+labels:deptData.departments,
+datasets:[{
+data:deptData.percentages,
+backgroundColor:[
+"#3b82f6",
+"#22c55e",
+"#f59e0b",
+"#ef4444",
+"#a855f7",
+"#06b6d4"
+]
+}]
+}
+});
+
+});
+
+fetch("/admin_year_trend")
+.then(res=>res.json())
+.then(yearData=>{
+
+if(yearChart) yearChart.destroy();
+
+yearChart = new Chart(
+document.getElementById("yearChart"),{
+type:"line",
+data:{
+labels:yearData.years,
+datasets:[{
+label:"Overall %",
+data:yearData.year_percentages,
+borderColor:"#22c55e",
+tension:.4,
+fill:false
+}]
+}
+});
+
+});
+}
+
+
+/* ===== EXPORT CSV ===== */
+function exportCSV(){
+
+let rows = document.querySelectorAll("table tr");
+let csv = [];
+
+rows.forEach(row=>{
+let cols = row.querySelectorAll("td,th");
+let rowData=[];
+cols.forEach(col=>rowData.push(col.innerText));
+csv.push(rowData.join(","));
+});
+
+let blob = new Blob([csv.join("\n")], {type:"text/csv"});
+let url = URL.createObjectURL(blob);
+
+let a = document.createElement("a");
+a.href = url;
+a.download = "attendance_report.csv";
+a.click();
+}
+
+
+/* ===== LOAD DEPARTMENTS ===== */
+function loadDepartments(){
+
+fetch("/admin_departments")
+.then(res=>res.json())
+.then(data=>{
+
+let select1 = document.getElementById("filterDept");
+let select2 = document.getElementById("deptFilter");
+
+if(select1){
+select1.innerHTML = `<option value="">All Departments</option>`;
+}
+
+if(select2){
+select2.innerHTML = `<option value="">All Departments</option>`;
+}
+
+data.forEach(dept=>{
+
+if(select1){
+select1.innerHTML += `<option value="${dept}">${dept}</option>`;
+}
+
+if(select2){
+select2.innerHTML += `<option value="${dept}">${dept}</option>`;
+}
+
+});
+
+});
+}
+
+/* ===== LOAD ON START ===== */
+window.onload = function(){
+openTab("dashboard");
+loadDashboard();
+loadDepartments();
+}
+
+function changeYear(step){
+selectedYear += step;
+loadDashboard();
+}
+
+setInterval(()=>{
+if(document.getElementById("dashboard").style.display !== "none"){
+loadDashboard();
+}
+},30000);
+
+function toggleMenu(el){
+
+let submenu = el.nextElementSibling;
+
+if(submenu.style.display === "block"){
+submenu.style.display = "none";
+}
+else{
+submenu.style.display = "block";
+}
+
+}
+
+function toggleSidebar(){
+
+const sidebar = document.getElementById("sidebar");
+const main = document.querySelector(".main");
+
+sidebar.classList.toggle("collapsed");
+main.classList.toggle("collapsed");
+
+}
+
+function openTab(id){
+
+if(id==="todayAttendance"){
+loadTodayAttendance();
+}
+
+if(id==="monthlyReport"){
+loadMonthlyAttendance();
+}
+
+const sections = [
+"dashboard",
+"addEmployee",
+"addProfile",
+"updateEmployee",
+"updateProfile",
+"todayAttendance",
+"monthlyReport",
+"attendance",
+"reports"
+];
+
+sections.forEach(section=>{
+let el = document.getElementById(section);
+if(el) el.style.display="none";
+});
+
+document.getElementById(id).style.display="block";
+
+
+/* Professional Titles */
+const titles = {
+dashboard:"Dashboard Overview",
+addEmployee:"Add Employee",
+addProfile:"Add Employee Profile",
+updateEmployee:"Update Employee",
+updateProfile:"Update Employee Profile",
+attendance:"Attendance Management",
+reports:"Reports & Analytics"
+};
+
+document.getElementById("sectionTitle").innerText = titles[id] || id;
+
+}
+
+function saveProfile(){
+
+let data = {
+emp_id: document.getElementById("emp_id").value,
+name: document.getElementById("name").value,
+email: document.getElementById("email").value,
+mobile: document.getElementById("mobile").value,
+department: document.getElementById("department").value,
+gender: document.getElementById("gender").value,
+dob: document.getElementById("dob").value,
+address: document.getElementById("address").value,
+father: document.getElementById("father").value,
+pan: document.getElementById("pan").value,
+aadhaar: document.getElementById("aadhaar").value,
+uan: document.getElementById("uan").value
+};
+
+fetch("/admin_add_employee",{
+method:"POST",
+headers:{
+"Content-Type":"application/json"
+},
+body:JSON.stringify(data)
+})
+.then(res=>res.json())
+.then(res=>{
+
+if(res.success){
+alert("Employee Profile Added Successfully ✅");
+openTab("dashboard");
+loadDashboard();
+}
+else{
+alert("Error Saving Profile");
+}
+
+});
+
+}
+
+
+function createEmployee(){
+
+let data = {
+emp_id: document.getElementById("login_emp_id").value,
+password: document.getElementById("login_password").value,
+role: document.getElementById("login_role").value,
+photo: document.getElementById("login_photo").value
+};
+
+fetch("/add_user",{
+method:"POST",
+headers:{
+"Content-Type":"application/json"
+},
+body:JSON.stringify(data)
+})
+.then(res=>res.json())
+.then(res=>{
+
+if(res.success){
+alert("Employee Login Created ✅");
+openTab("addProfile");
+}
+else{
+alert("Error Creating Login");
+}
+
+});
+
+}
+
+function loadEmployee(){
+
+let emp_id = document.getElementById("u_emp_id").value;
+
+fetch(`/get_employee/${emp_id}`)
+.then(res=>res.json())
+.then(emp=>{
+
+document.getElementById("u_name").value = emp.name || "";
+document.getElementById("u_email").value = emp.email || "";
+document.getElementById("u_mobile").value = emp.mobile || "";
+document.getElementById("u_department").value = emp.department || "";
+document.getElementById("u_gender").value = emp.gender || "";
+document.getElementById("u_dob").value = emp.dob || "";
+document.getElementById("u_address").value = emp.address || "";
+document.getElementById("u_father").value = emp.father || "";
+document.getElementById("u_pan").value = emp.pan || "";
+document.getElementById("u_aadhaar").value = emp.aadhaar || "";
+document.getElementById("u_uan").value = emp.uan || "";
+
+});
+
+}
+
+function updateProfile(){
+
+let data = {
+emp_id: document.getElementById("u_emp_id").value,
+name: document.getElementById("u_name").value,
+email: document.getElementById("u_email").value,
+mobile: document.getElementById("u_mobile").value,
+department: document.getElementById("u_department").value,
+gender: document.getElementById("u_gender").value,
+dob: document.getElementById("u_dob").value,
+address: document.getElementById("u_address").value,
+father: document.getElementById("u_father").value,
+pan: document.getElementById("u_pan").value,
+aadhaar: document.getElementById("u_aadhaar").value,
+uan: document.getElementById("u_uan").value
+};
+
+fetch("/admin_update_profile",{
+method:"POST",
+headers:{
+"Content-Type":"application/json"
+},
+body:JSON.stringify(data)
+})
+.then(res=>res.json())
+.then(res=>{
+
+if(res.success){
+alert("Profile Updated Successfully ✅");
+}
+else{
+alert("Update Failed");
+}
+
+});
+
+}
+
+function loadTodayAttendance(){
+
+let today = new Date().toISOString().split("T")[0];
+
+fetch(`/admin_attendance?date=${today}`)
+.then(res=>res.json())
+.then(data=>{
+
+let table = document.getElementById("todayAttendanceTable");
+table.innerHTML="";
+
+data.forEach(emp=>{
+
+let color =
+emp.status==="Late" ? "#f59e0b" :
+emp.status==="Absent" ? "#ef4444" :
+"#22c55e";
+
+table.innerHTML += `
+<tr>
+<td>${emp.emp_id}</td>
+<td>${emp.name}</td>
+<td>${emp.department}</td>
+<td>${emp.date}</td>
+<td>${emp.checkin || "-"}</td>
+<td style="color:${color};font-weight:600">${emp.status}</td>
+</tr>
+`;
+
+});
+
+});
+}
+
+function loadMonthlyAttendance(){
+
+let month = document.getElementById("monthFilter").value;
+let dept = document.getElementById("deptFilter").value;
+
+fetch(`/admin_attendance?department=${dept}`)
+.then(res=>res.json())
+.then(data=>{
+
+let table = document.getElementById("monthlyAttendanceTable");
+table.innerHTML="";
+
+data.forEach(emp=>{
+
+if(month && !emp.date.startsWith(month)) return;
+
+let color =
+emp.status==="Late" ? "#f59e0b" :
+emp.status==="Absent" ? "#ef4444" :
+"#22c55e";
+
+table.innerHTML += `
+<tr>
+<td>${emp.emp_id}</td>
+<td>${emp.name}</td>
+<td>${emp.department}</td>
+<td>${emp.date}</td>
+<td>${emp.checkin || "-"}</td>
+<td style="color:${color};font-weight:600">${emp.status}</td>
+</tr>
+`;
+
+});
+
+});
+}
+</script>
+
+</body>
+</html>
