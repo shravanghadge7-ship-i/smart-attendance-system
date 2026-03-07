@@ -1,0 +1,7 @@
+flask
+supabase
+httpx
+gunicorn
+opencv-python
+numpy
+pillow
