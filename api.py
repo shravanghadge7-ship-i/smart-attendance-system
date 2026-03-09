@@ -112,6 +112,14 @@ def ensure_employee_profile(emp_id):
 def home():
     return redirect("/login")
 
+
+# ======================================================
+# KEEP SERVER ALIVE (AUTO PING)
+# ======================================================
+@app.route("/ping")
+def ping():
+    return "Server is running"
+
 # ======================================================
 # LOGIN
 # ======================================================
