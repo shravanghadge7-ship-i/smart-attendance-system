@@ -125,7 +125,7 @@ def login():
 
         user = get_one("users", "emp_id", emp_id)
 
-        if user and user["password"] == password:
+        if user and str(user.get("password")) == str(password):
 
             ensure_employee_profile(emp_id)
             emp = get_one("employees", "emp_id", emp_id)
@@ -391,6 +391,9 @@ def reject_leave(leave_id):
 
     data = get_one("leaves", "id", leave_id)
 
+    if not data:
+        return redirect("/hr")
+
     update_data("leaves", "id", leave_id,
                 {"status":"Rejected","hr_reason":reason})
 
@@ -448,6 +451,40 @@ def apply_leave():
         return jsonify({"status":"error","message":str(e)})
 
 # ======================================================
+# APPROVE LEAVE
+# ======================================================
+@app.route("/approve/<leave_id>", methods=["POST"])
+def approve_leave(leave_id):
+
+    if session.get("role") != "hr":
+        return redirect("/login")
+
+    reason = request.form["reason"]
+
+    data = get_one("leaves", "id", leave_id)
+
+    if not data:
+        return redirect("/hr")
+
+    update_data(
+        "leaves",
+        "id",
+        leave_id,
+        {
+            "status": "Approved",
+            "hr_reason": reason
+        }
+    )
+
+    insert_data("notifications", {
+        "emp_id": data["emp_id"],
+        "message": "✅ Your leave has been approved",
+        "read": False,
+        "created_at": datetime.utcnow().isoformat()
+    })
+
+    return redirect("/hr")
+# ======================================================
 # CHANGE PASSWORD
 # ======================================================
 @app.route("/change_password",methods=["POST"])
@@ -465,6 +502,7 @@ def change_password():
         return jsonify({"status":"success"})
 
     return jsonify({"status":"failed"})
+
 
 # ======================================================
 # DELETE PENDING LEAVE (EMPLOYEE)

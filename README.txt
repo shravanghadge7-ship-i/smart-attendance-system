@@ -436,3 +436,6 @@ def change_password():
 python add_sample_data.py
 21-5-2025 emp2
 14-2-2025 emp1 15-1-26
+
+
+real time create 5 chart for continues upgrade as per year or month many chart are present in  dashboard real time so what can do you
