@@ -1,11 +1,21 @@
 <!DOCTYPE html>
 <html>
 <head>
-<title>Employee Dashboard</title>
+<title>Manager Dashboard</title>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 
 <style>
-body{margin:0;background:#0f172a;font-family:Arial;color:white;}
+body{
+margin:0;
+background:#0f172a;
+font-family:Arial;
+color:white;
+
+/* ⭐ IMPORTANT */
+overflow:hidden;
+}
 /* ===== NEW CLEAN SIDEBAR ===== */
 
 #menuBtn{
@@ -18,8 +28,8 @@ margin-right:15px;
 #sidebar{
 position:fixed;
 left:-240px;
-top:0;
-height:100%;
+top:70px;
+height:calc(100vh - 70px);   /* FIXED */
 width:240px;
 background:#0b1120;
 padding:30px 15px;
@@ -27,6 +37,9 @@ transition:.3s ease;
 box-shadow:4px 0 20px rgba(0,0,0,.4);
 display:flex;
 flex-direction:column;
+
+/* ⭐ MAIN FIX */
+overflow-y:auto;
 }
 
 #sidebar a{
@@ -45,7 +58,18 @@ transition:.2s;
 background:#1e293b;
 transform:translateX(4px);
 }
-.main{margin-left:30px;padding:40px;margin-top:70px;}
+.main{
+margin-left:0;
+padding:90px 30px 30px 30px;
+transition:0.3s;
+
+/* ⭐ ADD */
+height:100vh;
+overflow-y:auto;
+}
+.main.shifted{
+margin-left:240px;
+}
 .section{display:none;}
 .active{display:block;}
 .profile-card{background:#1e293b;padding:20px;border-radius:10px;max-width:300px;}
@@ -780,13 +804,16 @@ text-align:center;
 
 /* Medium chart size */
 .chart-card canvas{
-max-height:250px;
+height:250px !important;
+width:100% !important;
 }
 
 #sidebar a.activeMenu{
 background:#2563eb;
 color:white;
 }
+
+
 
 /* ===== CLEAN AVATAR ===== */
 
@@ -803,6 +830,7 @@ cursor:pointer;
 background:linear-gradient(135deg,#2563eb,#1e40af);
 box-shadow:0 4px 10px rgba(37,99,235,.4);
 }
+
 /* BIG AVATAR */
 .letter-logo.big{
 width:60px;
@@ -863,6 +891,243 @@ font-weight:bold;
     padding:10px;
     border:1px solid #334155;
 }
+
+/* ===== FINAL PERFECT CALENDAR HEADER ===== */
+
+.calendar-header-new{
+display:flex;
+align-items:center;
+justify-content:center;
+gap:25px;
+margin-bottom:25px;
+}
+
+/* Month title */
+.calendar-header-new h2{
+font-size:34px;
+font-weight:700;
+color:white;
+letter-spacing:2px;
+margin:0 30px;   /* space around title */
+}
+
+/* Arrow base */
+.nav-btn{
+cursor:pointer;
+color:#cbd5e1;
+user-select:none;
+transition:none;   /* no animation */
+}
+
+/* Single arrow */
+.nav-btn.single{
+font-size:28px;
+}
+
+/* Double arrow */
+.nav-btn.double{
+font-size:38px;
+font-weight:bold;
+}
+
+/* No hover movement */
+.nav-btn:hover{
+color:white;
+transform:none;
+}
+
+/* ===== BIRTHDAY HOVER CARD ===== */
+
+.birthday-box{
+background:#1e293b;
+padding:25px;
+border-radius:10px;
+width:200px;
+text-align:center;
+position:relative;
+cursor:pointer;
+}
+
+/* popup hidden */
+.birthday-popup{
+display:none;
+position:absolute;
+top:100%;
+left:50%;
+transform:translateX(-50%);
+margin-top:10px;
+background:white;
+color:black;
+width:240px;
+border-radius:10px;
+box-shadow:0 10px 25px rgba(0,0,0,.3);
+padding:15px;
+z-index:2000;
+text-align:left;
+}
+
+/* show on hover */
+.birthday-box:hover .birthday-popup{
+display:block;
+}
+
+/* birthday item */
+.birthday-item{
+padding:8px 0;
+border-bottom:1px solid #eee;
+font-size:14px;
+}
+
+.birthday-item:last-child{
+border-bottom:none;
+}
+
+/* ===== JOINEE HOVER PREVIEW ===== */
+
+.joinee-box{
+background:#1e293b;
+padding:25px;
+border-radius:10px;
+width:200px;
+text-align:center;
+position:relative;
+cursor:pointer;
+}
+
+/* hidden popup */
+.joinee-popup{
+display:none;
+position:absolute;
+top:100%;
+left:50%;
+transform:translateX(-50%);
+margin-top:10px;
+background:white;
+color:black;
+width:260px;
+border-radius:10px;
+box-shadow:0 10px 25px rgba(0,0,0,.3);
+padding:15px;
+z-index:2000;
+text-align:left;
+max-height:250px;
+overflow-y:auto;
+}
+
+/* show on hover */
+.joinee-box:hover .joinee-popup{
+display:block;
+}
+
+/* item style */
+.joinee-item{
+padding:8px 0;
+border-bottom:1px solid #eee;
+font-size:14px;
+}
+
+.joinee-item:last-child{
+border-bottom:none;
+}
+
+/* ===== WEEKLY OFF STYLE ===== */
+
+.woTxt{
+color:white;
+font-weight:bold;
+font-size:16px;
+text-align:center;
+margin-top:25px;
+}
+
+/* ===== PAGE TITLE ===== */
+
+.page-title{
+margin-bottom:20px;
+font-size:26px;
+font-weight:600;
+color:#ffffff;
+}
+
+/* ===== HELP CARD ===== */
+
+.help-card{
+background:#1e293b;
+padding:30px;
+border-radius:14px;
+max-width:900px;
+box-shadow:0 10px 25px rgba(0,0,0,.4);
+}
+
+/* ===== HELP BLOCK ===== */
+
+.help-block{
+margin-bottom:25px;
+padding:15px;
+background:#111827;
+border-radius:10px;
+border-left:5px solid #2563eb;
+}
+
+.help-block h3{
+margin-top:0;
+margin-bottom:10px;
+color:#3b82f6;
+}
+
+.help-block ul{
+margin:0;
+padding-left:20px;
+line-height:28px;
+color:#cbd5e1;
+}
+
+/* ===== BACK BUTTON (SAME STYLE AS OTHER PAGES) ===== */
+
+.back-btn{
+background:#2563eb;
+padding:10px 16px;
+border:none;
+border-radius:8px;
+color:white;
+font-weight:600;
+cursor:pointer;
+transition:.3s;
+}
+
+.back-btn:hover{
+background:#1d4ed8;
+transform:translateY(-2px);
+box-shadow:0 6px 15px rgba(37,99,235,.4);
+}
+.section{
+padding-top:10px;
+}
+#sidebar{
+top:70px;   /* below header */
+height:calc(100% - 70px);
+}
+
+.kpi-card {
+background:#1e293b;
+padding:18px;
+border-radius:14px;
+text-align:center;
+transition:0.3s;
+cursor:pointer;
+}
+
+.kpi-card:hover{
+transform:translateY(-5px);
+box-shadow:0 10px 25px rgba(0,0,0,.4);
+}
+
+.good { color:#22c55e; }
+.bad { color:#ef4444; }
+.warn { color:#f59e0b; }
+.alert-red{color:#ef4444;font-weight:bold;}
+.alert-green{color:#22c55e;font-weight:bold;}
+.alert-yellow{color:#f59e0b;font-weight:bold;}
 </style>
 </head>
 
@@ -878,19 +1143,31 @@ font-weight:bold;
 <img src="https://cdn-icons-png.flaticon.com/512/5968/5968705.png">
 
 <div class="company">
-<b>Mahendra Corporation Private Limited</b><br>
+<b>Mahendra Corporation Private Limited</b>
+<br>
+
+<span style="color:#2563eb;font-weight:bold">
+Manager Portal
+</span>
+
+<br>
+
+<span id="managerName" style="font-size:12px;color:#64748b">
+Loading Manager...
+</span>
+
+<br>
 <span>| Year 2025-26</span>
 </div>
 
 </div>
 
 <div class="right-head">
-<div class="icon bell" onclick="toggleNotifications()">
+<div class="icon bell" onclick="openNotificationPage()">
 🔔
 <span id="bellCount" class="bell-badge">0</span>
-<div id="bellDropdown" class="bell-dropdown"></div>
 </div>
-<div class="icon">❓ Need Help</div>
+<div class="icon" onclick="openTab('help')">❓ Need Help</div>
 <div class="profile-head">
 
 <div id="avatarBtn" class="letter-logo" onclick="toggleProfileMenu()"></div>
@@ -925,18 +1202,28 @@ font-weight:bold;
 
 <div id="sidebar">
 
-<a onclick="openTab('profile')">👤 Profile</a>
-<a onclick="openTab('dashboard')">📊 Dashboard</a>
-<a onclick="openTab('attendance')">📅 Attendance</a>
+<a onclick="openTab('home')" class="activeMenu">🏠 Home</a>
+<a onclick="openTab('profile')">👤 My Profile</a>
+<a onclick="openTab('personalDashboard')">🧍 My Dashboard</a>
+<a onclick="openTab('attendance')">📅 My Attendance</a>
 <a onclick="openTab('leave')">📝 Apply Leave</a>
 <a onclick="openTab('history')">📂 Leave History</a>
+
+<hr style="border:1px solid #334155">
+
+<a onclick="openTab('teamAttendance')">👥 Team Attendance</a>
+<a onclick="openTab('teamDashboard')">👥 Team Dashboard</a>
+<a onclick="openTab('approveLeave')">✅ Approve Leaves</a>
+
+<hr style="border:1px solid #334155">
+
 <a onclick="openPassword()">🔒 Change Password</a>
 <a href="/logout">🚪 Logout</a>
 
 </div>
 
 <div class="main">
-<div id="home" class="section active">
+<div id="home" class="section" style="display:block;">
 
 <h1 id="greetText"
 style="
@@ -952,26 +1239,197 @@ font-weight:800;
 ">
 </h1>
 
-<div style="text-align:center;color:#94a3b8;margin-bottom:40px">
-Employee Portal
+<div style="text-align:center;color:#94a3b8;margin-bottom:20px">
+Manager Portal
 </div>
 
+<div style="
+background:#1e293b;
+padding:20px;
+border-radius:10px;
+text-align:center;
+margin-bottom:30px;
+">
+
+<b style="font-size:18px">Manager Control Center</b>
+
+<p style="color:#94a3b8">
+Approve leaves, monitor attendance and track team performance
+</p>
+
+</div>
 <div style="display:flex;gap:30px;justify-content:center;flex-wrap:wrap">
 
-<div onclick="loadNewJoinees()"
-style="background:#1e293b;padding:25px;border-radius:10px;width:200px;text-align:center;cursor:pointer">
+<div class="joinee-box" onclick="openJoineePage()">
+
 <h3>New Joinees</h3>
 👤
+
+<div id="joineePopup" class="joinee-popup">
+Loading...
 </div>
 
-<div style="background:#1e293b;padding:25px;border-radius:10px;width:200px;text-align:center">
+</div>
+
+<div class="birthday-box" onclick="openBirthdayPage()">
+
 <h3>Birthdays</h3>
 🎂
+
+<div id="birthdayPopup" class="birthday-popup">
+Loading...
 </div>
 
 </div>
 
 </div>
+<!-- ===== MANAGER QUICK ACTIONS ===== -->
+
+<div style="
+display:flex;
+gap:25px;
+justify-content:center;
+flex-wrap:wrap;
+margin-top:30px;
+">
+
+<div class="birthday-box" onclick="openTab('approveLeave')">
+
+<h3>Approve Leaves</h3>
+✅
+
+</div>
+
+<div class="birthday-box" onclick="openTab('teamAttendance')">
+
+<h3>Team Attendance</h3>
+👥
+
+</div>
+
+<div class="birthday-box" onclick="openTab('dashboard')">
+
+<h3>Team Performance</h3>
+📊
+
+</div>
+
+</div>
+
+</div>
+
+
+<div id="joinees" class="section">
+
+<h2 style="margin-bottom:20px;">New Joinees</h2>
+
+<table class="leaveTable">
+<thead>
+<tr>
+<th>Employee ID</th>
+<th>Name</th>
+<th>Department</th>
+<th>Joined On</th>
+</tr>
+</thead>
+
+<tbody id="joineeTable"></tbody>
+</table>
+
+<br>
+<button onclick="openTab('home')">⬅ Back</button>
+
+</div>
+
+<div id="birthdays" class="section">
+
+<h2 style="margin-bottom:20px;">Today's Birthdays 🎂</h2>
+
+<table class="leaveTable">
+<thead>
+<tr>
+<th>Name</th>
+<th>Department</th>
+<th>Date of Birth</th>
+</tr>
+</thead>
+
+<tbody id="birthdayTable"></tbody>
+</table>
+
+<br>
+<button onclick="openTab('home')">⬅ Back</button>
+
+</div>
+
+
+<!-- ================= NOTIFICATION PAGE ================= -->
+
+<div id="notifications" class="section">
+
+<h2 style="margin-bottom:20px;">🔔 Notifications</h2>
+
+<table class="leaveTable">
+<thead>
+<tr>
+<th>Message</th>
+<th>Date & Time</th>
+</tr>
+</thead>
+
+<tbody id="notificationTable"></tbody>
+</table>
+
+<br>
+<button onclick="openTab('home')">⬅ Back</button>
+
+</div>
+
+<div id="help" class="section">
+
+<h2 class="page-title">Help & System Rules</h2>
+
+<div class="help-card">
+
+<div class="help-block">
+<h3>📅 Attendance Rules</h3>
+<ul>
+<li>Mark attendance before 10:05 AM.</li>
+<li>10:05 AM – 12:00 PM considered Late.</li>
+<li>No check-in = Absent.</li>
+</ul>
+</div>
+
+<div class="help-block">
+<h3>📝 Leave Rules</h3>
+<ul>
+<li>Apply leave before taking leave.</li>
+<li>HR approval required.</li>
+<li>Maximum 21 leaves per year.</li>
+<li>Rejected leave counts as working day.</li>
+</ul>
+</div>
+
+<div class="help-block">
+<h3>📊 Dashboard Guide</h3>
+<ul>
+<li>Dashboard shows attendance performance.</li>
+<li>KPI shows attendance score & grade.</li>
+<li>Charts display yearly comparison.</li>
+</ul>
+</div>
+
+<br>
+
+<button class="back-btn" onclick="openTab('home')">
+⬅ Back
+</button>
+
+</div>
+
+</div>
+
+
 
 <div id="profile" class="section">
 
@@ -1013,8 +1471,37 @@ style="background:#1e293b;padding:25px;border-radius:10px;width:200px;text-align
 
 <div id="dashboard" class="section">
 
-<h2 style="margin-bottom:20px;">Employee Dashboard</h2>
+<h2 style="margin-bottom:10px;">Manager Dashboard</h2>
+
+<p style="color:#94a3b8;margin-bottom:25px">
+Manage your team attendance, leaves and performance
+</p>
 <div id="kpiRow" class="kpi-row"></div>
+
+<div class="kpi-row">
+
+<div class="kpi-card">
+<div class="kpi-title">Team Members</div>
+<div class="kpi-value" id="teamTotal">0</div>
+</div>
+
+<div class="kpi-card">
+<div class="kpi-title">Present Today</div>
+<div class="kpi-value" id="teamPresent">0</div>
+</div>
+
+<div class="kpi-card">
+<div class="kpi-title">On Leave</div>
+<div class="kpi-value" id="teamLeave">0</div>
+</div>
+
+<div class="kpi-card">
+<div class="kpi-title">Late Today</div>
+<div class="kpi-value" id="teamLate">0</div>
+</div>
+
+</div>
+
 <div class="dashboard-grid">
 
 <div class="chart-card">
@@ -1041,20 +1528,145 @@ style="background:#1e293b;padding:25px;border-radius:10px;width:200px;text-align
 
 </div>
 
+<div id="personalDashboard" class="section">
+
+<h2 class="page-title">My Performance Dashboard</h2>
+
+<!-- FILTERS -->
+<div style="display:flex;gap:10px;margin-bottom:20px;">
+<select id="monthFilter"></select>
+<select id="yearFilter"></select>
+</div>
+
+<!-- KPI CARDS -->
+<div id="p_kpiRow" class="kpi-row"></div>
+
+<!-- INSIGHTS -->
+<div id="insightsBox" style="
+background:#1e293b;
+padding:20px;
+border-radius:12px;
+margin-bottom:20px;
+"></div>
+
+<!-- CHARTS -->
+<div class="dashboard-grid">
+
+<div class="chart-card">
+<h3>Attendance Status</h3>
+<canvas id="p_statusChart"></canvas>
+</div>
+
+<div class="chart-card">
+<h3>Monthly Attendance</h3>
+<canvas id="p_monthlyChart"></canvas>
+</div>
+
+<div class="chart-card">
+<h3>Leave Summary</h3>
+<canvas id="p_leaveChart"></canvas>
+</div>
+
+<div class="chart-card">
+<h3>Check-in Trend</h3>
+<canvas id="p_timeChart"></canvas>
+</div>
+
+</div>
+
+<!-- MINI CALENDAR -->
+<div id="miniCalendar" class="calendar" style="margin-top:30px;"></div>
+
+</div>
+<div id="teamDashboard" class="section">
+
+<h2 class="page-title">Team Performance Dashboard</h2>
+
+<!-- FILTERS -->
+<div style="display:flex;gap:12px;margin-bottom:20px;flex-wrap:wrap;">
+<select id="empFilter"></select>
+<select id="deptFilter"></select>
+<input type="date" id="fromDate">
+<input type="date" id="toDate">
+<button onclick="applyFilters()">Apply</button>
+</div>
+
+<!-- KPI -->
+<div id="teamKpiRow" class="kpi-row"></div>
+
+<!-- INSIGHTS -->
+<div id="teamInsights" class="chart-card"></div>
+
+<!-- ALERTS -->
+<div id="alertBox" class="chart-card"></div>
+
+<!-- CHARTS -->
+<div class="dashboard-grid">
+
+<div class="chart-card">
+<h3>Attendance Status</h3>
+<canvas id="teamStatusChart"></canvas>
+</div>
+
+<div class="chart-card">
+<h3>Monthly Attendance</h3>
+<canvas id="teamMonthlyChart"></canvas>
+</div>
+
+<div class="chart-card">
+<h3>Leave Distribution</h3>
+<canvas id="teamLeaveChart"></canvas>
+</div>
+
+<div class="chart-card">
+<h3>Check-in Trend</h3>
+<canvas id="teamTimeChart"></canvas>
+</div>
+
+<div class="chart-card">
+<h3>Employee Performance</h3>
+<canvas id="teamPerformanceChart"></canvas>
+</div>
+
+</div>
+
+<!-- TABLE -->
+<div class="chart-card" style="margin-top:20px;">
+<h3>Team Summary</h3>
+<table class="leaveTable">
+<thead>
+<tr>
+<th>Name</th>
+<th>Attendance %</th>
+<th>Late</th>
+<th>Leaves</th>
+<th>Status</th>
+</tr>
+</thead>
+<tbody id="teamTable"></tbody>
+</table>
+</div>
+
+</div>
+
 <div id="attendance" class="section">
 <div id="leaveBox" style="margin-bottom:10px;font-weight:bold">
 Leave Balance: <span id="leaveCount">21</span> / 21
 </div>
 
-<div class="calendar-header">
+<button onclick="startAttendance()" style="margin-bottom:15px">
+📸 Mark Attendance
+</button>
 
-<button onclick="prevMonth()">◀</button>
+<div class="calendar-header-new">
+
+<span class="nav-btn double left" onclick="changeMonth(-2)">«</span>
+<span class="nav-btn single left" onclick="changeMonth(-1)">‹</span>
 
 <h2 id="monthTitle"></h2>
 
-<button onclick="nextMonth()">▶</button>
-
-<select id="yearSelect" onchange="changeYear()"></select>
+<span class="nav-btn single right" onclick="changeMonth(1)">›</span>
+<span class="nav-btn double right" onclick="changeMonth(2)">»</span>
 
 </div>
 
@@ -1194,6 +1806,69 @@ Submit Leave Request
 </table>
 
 </div>
+<!-- ================= MANAGER TEAM ATTENDANCE ================= -->
+
+<div id="teamAttendance" class="section">
+
+<h2>Team Attendance</h2>
+
+<!-- ✅ ADD FILTER HERE -->
+<div style="margin-bottom:15px;display:flex;gap:10px;flex-wrap:wrap;">
+
+<input type="date" id="filterDate">
+
+<input type="text" id="searchEmp" placeholder="Search Employee Name">
+
+<button onclick="applyFilter()">🔍 Filter</button>
+
+<button onclick="exportExcel()">📊 Export Excel</button>
+
+<button onclick="exportPDF()">📄 Export PDF</button>
+
+</div>
+
+<table class="leaveTable">
+
+<thead>
+<tr>
+<th>Employee ID</th>
+<th>Name</th>
+<th>Date</th>
+<th>Check In</th>
+<th>Check Out</th>
+<th>Status</th>
+</tr>
+</thead>
+
+<tbody id="teamAttendanceTable"></tbody>
+
+</table>
+
+</div>
+
+
+<!-- ================= MANAGER APPROVE LEAVES ================= -->
+
+<div id="approveLeave" class="section">
+
+<h2>Approve Leave Requests</h2>
+
+<table>
+<thead>
+<tr>
+<th>Employee</th>
+<th>Type</th>
+<th>From</th>
+<th>To</th>
+<th>Days</th>
+<th>Action</th>
+</tr>
+</thead>
+
+<tbody id="approveLeaveTable"></tbody>
+</table>
+
+</div>
 
 
 </div>
@@ -1250,31 +1925,60 @@ document.getElementById("menuId").innerText = d.emp_id || "";
 });
 
 let open=false;
-function toggle(){sidebar.style.left=open?"-230px":"0";open=!open;}
+function toggle(){
+
+open = !open;
+
+sidebar.style.left = open ? "0" : "-240px";
+
+let main = document.querySelector(".main");
+
+if(open){
+main.classList.add("shifted");
+}else{
+main.classList.remove("shifted");
+}
+
+}
 
 /*leave*/
 function openTab(id){
 
-document.querySelectorAll(".section")
-.forEach(s=>s.classList.remove("active"));
+// hide all sections
+document.querySelectorAll(".section").forEach(s=>{
+    s.style.display = "none";
+});
 
-document.getElementById(id).classList.add("active");
-
-toggle();
-
-/* ⭐ DASHBOARD LOAD */
-if(id === "dashboard"){
-    setTimeout(()=>{ buildDashboard(); },200);
+// show selected section
+let section = document.getElementById(id);
+if(section){
+    section.style.display = "block";
 }
 
-/* ⭐ AUTO LOAD THIS YEAR LEAVE HISTORY */
-if(id === "history"){
-    setTimeout(()=>{
-        let firstTab =
-        document.querySelector(".tab");
-        loadYear('current', firstTab);
-    },200);
+// load data
+if(id==="teamDashboard"){
+
+    loadTeamEmployees();
+
+    refreshData().then(() => {
+
+        setTimeout(() => {
+            buildTeamDashboard();
+        }, 300);
+
+    });
 }
+if(id==="personalDashboard"){
+    buildPersonalDashboard();
+}
+
+if(id==="teamAttendance"){
+    loadTeamAttendance();
+}
+if(id === "approveLeave"){
+    loadManagerLeaves();
+}
+
 }
 let attendance=[],leaves=[];
 
@@ -1290,11 +1994,102 @@ leaves = l;
 
 renderMonth();
 enhancedCalendar();
+
+/* ================= AUTO NOTIFICATION ENGINE ================= */
+
+let today = new Date().toISOString().slice(0,10);
+
+let record = attendance.find(x=>x.date===today);
+
+/* ===== RUN ONLY ONCE PER DAY ===== */
+let lastNotifyDate = localStorage.getItem("lastNotifyDate");
+
+if(lastNotifyDate !== today){
+
+if(record){
+
+if(record.checkin > "10:05:00"){
+createInstantNotification("You are Late today ⏰");
+}else{
+createInstantNotification("You are Present On Time ✅");
+}
+
+}else{
+
+let now=new Date();
+
+/* ignore sunday */
+if(now.getDay()!==0){
+createInstantNotification("You are Absent today ❌");
+}
+}
+
+/* save today */
+localStorage.setItem("lastNotifyDate", today);
+}
+
+/* Tomorrow reminder */
+let tomorrow=new Date();
+tomorrow.setDate(tomorrow.getDate()+1);
+
+/* Weekly Off reminder */
+if(tomorrow.getDay()===0){
+createInstantNotification("Tomorrow is Weekly Off 🎉");
+}
+
+/* Paid Holiday reminder */
+let isoTomorrow =
+tomorrow.toISOString().slice(0,10);
+
+if(NATIONAL_HOLIDAYS.includes(isoTomorrow)){
+createInstantNotification("Tomorrow is Paid Holiday 🎉");
+}
+
 });
 }
 
-refreshData();
-setInterval(refreshData,15000);
+refreshData().then(()=>{
+
+let activeSection = document.querySelector(".section[style*='block']");
+
+if(activeSection){
+
+if(activeSection.id === "teamDashboard"){
+buildTeamDashboard();
+}
+
+if(activeSection.id === "personalDashboard"){
+buildPersonalDashboard();
+}
+
+if(activeSection.id === "teamAttendance"){
+loadTeamAttendance();
+}
+
+}
+
+});
+setInterval(()=>{
+
+refreshData().then(()=>{
+
+let current = document.querySelector(".section[style*='block']");
+
+if(current){
+
+if(current.id==="teamDashboard"){
+buildTeamDashboard();
+}
+
+if(current.id==="personalDashboard"){
+buildPersonalDashboard();
+}
+
+}
+
+});
+
+},10000);   // every 10 sec
 
 let now=new Date();
 /* ===== DISABLE PAST DATE SELECTION ===== */
@@ -1306,18 +2101,7 @@ document.getElementById("to").setAttribute("min", todayStr);
 let currentMonth=now.getMonth();
 let currentYear=now.getFullYear();
 
-function buildYear(){
-yearSelect.innerHTML="";
-for(let y=currentYear-5;y<=currentYear+5;y++)
-yearSelect.innerHTML+=`<option ${y==currentYear?"selected":""}>${y}</option>`;
-}
-buildYear();
 
-function changeYear(){
-currentYear = parseInt(yearSelect.value);
-renderMonth();
-enhancedCalendar();   // ⭐ ADD THIS
-}
 function prevMonth(){
 currentMonth--;
 if(currentMonth<0){
@@ -1346,8 +2130,12 @@ function renderMonth(){
 let todayDate = new Date();
 todayDate.setHours(0,0,0,0);
 
-monthTitle.innerText=new Date(currentYear,currentMonth)
+let monthName =
+new Date(currentYear,currentMonth)
 .toLocaleString("default",{month:"long"});
+
+monthTitle.innerText =
+monthName.toUpperCase() + " " + currentYear;
 
 let cal=document.getElementById("calendar");
 while(cal.children.length>7) cal.removeChild(cal.lastChild);
@@ -1378,42 +2166,37 @@ for(let d=1;d<=last.getDate();d++){
 let date=new Date(currentYear,currentMonth,d);
 /* ===== HOLIDAY CHECK ===== */
 
+
 /* ===== HOLIDAY CHECK ===== */
 
 let isHoliday = false;
+let isWO = false;
 
-/* Sunday */
+/* Sunday = Weekly Off */
 if(date.getDay() === 0){
     isHoliday = true;
+    isWO = true;
 }
 
-/* 1st & 3rd Saturday */
+/* 1st & 3rd Saturday = Weekly Off */
 if(date.getDay() === 6){
     let weekNumber = Math.ceil(d / 7);
     if(weekNumber === 1 || weekNumber === 3){
         isHoliday = true;
+        isWO = true;
     }
 }
 
-/* ⭐ NATIONAL HOLIDAY CHECK */
+/* National Holiday */
 let isoDate =
 new Date(date.getTime()-date.getTimezoneOffset()*60000)
 .toISOString().slice(0,10);
 
 if(NATIONAL_HOLIDAYS.includes(isoDate)){
     isHoliday = true;
+    isWO = false;
 }
 
-/* Saturday */
-if(date.getDay() === 6){
-
-let weekNumber = Math.ceil(d / 7);
-
-/* 1st and 3rd Saturday */
-if(weekNumber === 1 || weekNumber === 3){
-isHoliday = true;
-}
-}
 let ds =
 new Date(date.getTime() - date.getTimezoneOffset()*60000)
 .toISOString()
@@ -1428,11 +2211,17 @@ let leaveStatus = leaveMap[ds] || null;
 
 if(isHoliday){
 
-    /* PAID HOLIDAY → NO ATTENDANCE */
     cin = "";
     cout = "";
 
-    status = `<div class="status approvedTxt">🎉 Paid Holiday</div>`;
+    /* Weekly Off */
+    if(isWO){
+        status = `<div class="woTxt">WO</div>`;
+    }
+    /* National Holiday */
+    else{
+        status = `<div class="status approvedTxt">🎉 Paid Holiday</div>`;
+    }
 }
 
 /* APPROVED LEAVE */
@@ -1507,8 +2296,10 @@ else{
 cal.innerHTML+=`
 <div class="day ${isHoliday ? 'holidayDay' : ''}">
 ${d}<br>
-<span class="small">IN : ${cin}</span><br>
-<span class="small">OUT: ${cout}</span>
+
+${isWO ? "" : `<span class="small">IN : ${cin}</span><br>
+<span class="small">OUT: ${cout}</span>`}
+
 ${status}
 </div>`;
 }
@@ -1719,10 +2510,6 @@ from.onchange=calcDays;
 to.onchange=calcDays;
 
 
-document.querySelectorAll(".icon")[0].onclick=()=>{
-openTab('notifications');
-};
-
 
 function greeting(){
 
@@ -1738,7 +2525,7 @@ msg + "<br>WELCOME TO MAHENDRA CORPORATION";
 
 }
 
-greeting();
+window.addEventListener("DOMContentLoaded", greeting);
 
 
 
@@ -1980,81 +2767,13 @@ new Date(end.getTime()+86400000)
 
 
 
-/* ================= NOTIFICATION SYSTEM ================= */
-
-/* ---- Load Bell Dropdown ---- */
-
-function loadNotifications(){
-
-fetch("/notifications_data")
-.then(r=>r.json())
-.then(d=>{
-
-let box=document.getElementById("bellDropdown");
-box.innerHTML="";
-
-/* if no notifications */
-if(!d.notifications || d.notifications.length===0){
-box.innerHTML="<div class='bell-item'>No notifications</div>";
-}
-
-/* show notifications */
-d.notifications.forEach(n=>{
-
-box.innerHTML+=`
-<div class="bell-item"
-onclick="markRead('${n.id}')">
-${n.message}
-</div>
-`;
-
-});
-
-/* update bell badge */
-let badge=document.getElementById("bellCount");
-
-if(d.unread>0){
-badge.style.display="block";
-badge.innerText=d.unread;
-}else{
-badge.style.display="none";
-}
-
-});
-}
 
 
-/* ---- Toggle Bell ---- */
-
-function toggleNotifications(){
-
-let box=document.getElementById("bellDropdown");
-
-box.style.display =
-box.style.display==="block"?"none":"block";
-
-loadNotifications();
-}
 
 
-/* ---- Mark Notification Read ---- */
-
-function markRead(id){
-
-fetch("/mark_notification_read",{
-method:"POST",
-headers:{"Content-Type":"application/json"},
-body:JSON.stringify({id:id})
-})
-.then(()=>{
-loadNotifications();
-});
-}
 
 
-/* ---- Auto Refresh Bell ---- */
 
-setInterval(loadNotifications,20000);
 
 
 /* ================= FLOATING POPUP SYSTEM ================= */
@@ -2126,6 +2845,8 @@ container.appendChild(card);
 setTimeout(()=>{
 if(card) card.remove();
 },8000);
+
+
 }
 
 
@@ -2133,6 +2854,28 @@ if(card) card.remove();
 
 setInterval(loadFloatingNotifications,20000);
 
+/* ===== INSTANT NOTIFICATION CREATOR ===== */
+
+function createInstantNotification(message){
+
+/* ALWAYS STORE (no duplicate block) */
+
+fetch("/add_notification",{
+method:"POST",
+headers:{"Content-Type":"application/json"},
+body:JSON.stringify({message:message})
+});
+
+/* show popup instantly */
+createNotificationCard({
+id:Date.now(),
+message:message,
+read:false
+});
+
+/* refresh bell */
+updateBellCount();
+}
 
 /* ================= HR BELL SAFETY ================= */
 
@@ -2155,12 +2898,47 @@ setInterval(checkNotify,3000);
 
 /* ================= LOAD ON PAGE START ================= */
 
-window.onload = function(){
+window.addEventListener("load", function(){
+updateBellCount();
 loadNotifications();
 loadFloatingNotifications();
-};
+renderMonth();
+loadBirthdays();   // ⭐ ADD THIS
+});
 
-function buildDashboard(){
+
+function loadTeamEmployees(){
+
+fetch("/team_employees")
+.then(r=>r.json())
+.then(data=>{
+
+let select = document.getElementById("teamFilterEmp");
+
+if(!select) return;
+
+select.innerHTML = `<option value="">All Employees</option>`;
+
+data.forEach(emp=>{
+select.innerHTML += `
+<option value="${emp.emp_id}">
+${emp.name} (${emp.emp_id})
+</option>`;
+});
+
+});
+
+}
+
+function applyTeamFilter(){
+
+let empId = document.getElementById("teamFilterEmp").value;
+
+buildTeamDashboard(empId);
+
+}
+
+function buildTeamDashboard(empFilter=null){
 
 let years=[currentYear,currentYear-1,currentYear-2];
 
@@ -2286,10 +3064,62 @@ if(l.status==="Rejected") rejected += days;
 });
 
 /* draw charts */
-drawStatusChart(ontime,late,absent);
-drawMonthlyChart(monthlyPresent);
-drawLeaveChart(approved,pending,rejected);
-drawAdvancedTimeChart(avgByYear,years);
+safeCreate("teamStatusChart",{
+type:"pie",
+data:{
+labels:["On Time","Late","Absent"],
+datasets:[{
+data:[ontime,late,absent],
+backgroundColor:["#22c55e","#f59e0b","#ef4444"]
+}]
+}
+});
+
+safeCreate("teamMonthlyChart",{
+type:"bar",
+data:{
+labels:["Jan","Feb","Mar","Apr","May","Jun",
+"Jul","Aug","Sep","Oct","Nov","Dec"],
+datasets:[{
+label:"Present Days",
+data:monthlyPresent,
+backgroundColor:"#3b82f6"
+}]
+}
+});
+
+safeCreate("teamLeaveChart",{
+type:"doughnut",
+data:{
+labels:["Approved","Pending","Rejected"],
+datasets:[{
+data:[approved,pending,rejected],
+backgroundColor:["#16a34a","#f59e0b","#dc2626"]
+}]
+}
+});
+
+safeCreate("teamTimeChart",{
+type:"line",
+data:{
+labels:["Jan","Feb","Mar","Apr","May","Jun",
+"Jul","Aug","Sep","Oct","Nov","Dec"],
+datasets:[
+{
+label:years[0],
+data:avgByYear[years[0]],
+borderColor:"#22c55e",
+fill:false
+},
+{
+label:years[1],
+data:avgByYear[years[1]],
+borderColor:"#3b82f6",
+fill:false
+}
+]
+}
+});
 
 
 /* ===== KPI CALCULATION ===== */
@@ -2329,7 +3159,7 @@ let trend = diff > 0
 : "No Change";
 
 /* render KPI cards */
-kpiRow.innerHTML=`
+document.getElementById("teamKpiRow").innerHTML = `
 <div class="kpi-card">
 <div class="kpi-title">Attendance Score</div>
 <div class="kpi-value">${score}% (${grade})</div>
@@ -2361,14 +3191,24 @@ function safeCreate(id, config){
 let canvas = document.getElementById(id);
 if(!canvas) return;
 
+/* ✅ FORCE CANVAS SIZE FIX */
+canvas.style.width = "100%";
+canvas.style.height = "250px";
+
+/* destroy old chart */
 if(chartInstances[id]){
 chartInstances[id].destroy();
 }
+
+/* delay render (VERY IMPORTANT) */
+setTimeout(() => {
 
 chartInstances[id] = new Chart(
 canvas.getContext("2d"),
 config
 );
+
+}, 100);
 }
 
 /*Status Chart (Simple Pie)*/
@@ -2517,7 +3357,12 @@ const NATIONAL_HOLIDAYS = [
 ];
 
 
-function loadNewJoinees(){
+function openJoineePage(){
+
+document.querySelectorAll(".section")
+.forEach(s=>s.classList.remove("active"));
+
+document.getElementById("joinees").classList.add("active");
 
 fetch("/new_joinees")
 .then(r=>r.json())
@@ -2527,8 +3372,7 @@ let table=document.getElementById("joineeTable");
 table.innerHTML="";
 
 data.forEach(emp=>{
-
-table.innerHTML += `
+table.innerHTML+=`
 <tr>
 <td>${emp.emp_id}</td>
 <td>${emp.name || "-"}</td>
@@ -2538,20 +3382,1183 @@ emp.created_at
 ? new Date(emp.created_at).toLocaleDateString("en-GB")
 : "-"
 }</td>
+</tr>`;
+});
+
+});
+
+}
+
+
+function openBirthdayPage(){
+
+document.querySelectorAll(".section")
+.forEach(s=>s.classList.remove("active"));
+
+document.getElementById("birthdays")
+.classList.add("active");
+
+loadBirthdayTable();
+}
+
+
+function loadBirthdayTable(){
+
+fetch("/profile_list")
+.then(r=>r.json())
+.then(data=>{
+
+let table=document.getElementById("birthdayTable");
+table.innerHTML="";
+
+let today=new Date();
+let d=today.getDate();
+let m=today.getMonth()+1;
+
+let found=false;
+
+data.forEach(emp=>{
+
+if(!emp.dob) return;
+
+let dob=new Date(emp.dob);
+
+if(dob.getDate()===d && dob.getMonth()+1===m){
+
+found=true;
+
+table.innerHTML+=`
+<tr>
+<td>${emp.name}</td>
+<td>${emp.department||"-"}</td>
+<td>${dob.toLocaleDateString("en-GB")}</td>
+</tr>
+`;
+
+}
+
+});
+
+if(!found){
+table.innerHTML=`
+<tr>
+<td colspan="3">No birthdays today 🎈</td>
+</tr>
+`;
+}
+
+});
+}
+
+
+
+function prevYear(){
+currentYear--;
+renderMonth();
+enhancedCalendar();
+}
+
+function nextYear(){
+currentYear++;
+renderMonth();
+enhancedCalendar();
+}
+
+window.addEventListener("load", function(){
+updateBellCount();
+loadNotifications();
+loadFloatingNotifications();
+renderMonth();
+loadJoineePreview();   // ⭐ ADD
+});
+
+function changeMonth(step){
+
+currentMonth += step;
+
+while(currentMonth < 0){
+currentMonth += 12;
+currentYear--;
+}
+
+while(currentMonth > 11){
+currentMonth -= 12;
+currentYear++;
+}
+
+renderMonth();
+enhancedCalendar();
+}
+
+/* ===== LOAD TODAY BIRTHDAYS ===== */
+
+function loadBirthdays(){
+
+fetch("/profile_list")   // backend should return all employees
+.then(r=>r.json())
+.then(data=>{
+
+let popup = document.getElementById("birthdayPopup");
+
+let today = new Date();
+let tDay = today.getDate();
+let tMonth = today.getMonth()+1;
+
+let html = "";
+let count = 0;
+
+data.forEach(emp=>{
+
+if(!emp.dob) return;
+
+let dob = new Date(emp.dob);
+
+let d = dob.getDate();
+let m = dob.getMonth()+1;
+
+/* match ONLY today */
+if(d === tDay && m === tMonth){
+
+count++;
+
+html += `
+<div class="birthday-item">
+🎉 <b>${emp.name}</b><br>
+<small>${emp.department || ""}</small>
+</div>
+`;
+
+}
+
+});
+
+if(count===0){
+html = "<div>No birthdays today 🎈</div>";
+}
+
+popup.innerHTML = html;
+
+});
+}
+
+/* ===== LOAD JOINEE PREVIEW ===== */
+
+function loadJoineePreview(){
+
+fetch("/new_joinees")
+.then(r=>r.json())
+.then(data=>{
+
+let popup=document.getElementById("joineePopup");
+
+if(!data || data.length===0){
+popup.innerHTML="<div>No new joinees</div>";
+return;
+}
+
+let html="";
+
+data.slice(0,5).forEach(emp=>{
+
+html += `
+<div class="joinee-item">
+<b>${emp.name || "-"}</b><br>
+<small>${emp.department || ""}</small>
+</div>
+`;
+
+});
+
+popup.innerHTML = html;
+
+});
+}
+
+function updateBellCount(){
+
+fetch("/notifications_data")
+.then(r=>r.json())
+.then(d=>{
+
+let badge=document.getElementById("bellCount");
+
+if(d.unread>0){
+badge.style.display="block";
+badge.innerText=d.unread;
+}else{
+badge.style.display="none";
+}
+
+});
+}
+
+/* ================= OPEN NOTIFICATION PAGE ================= */
+
+function openNotificationPage(){
+
+document.querySelectorAll(".section")
+.forEach(s=>s.classList.remove("active"));
+
+document.getElementById("notifications")
+.classList.add("active");
+
+fetch("/notifications_data")
+.then(r=>r.json())
+.then(data=>{
+
+let table = document.getElementById("notificationTable");
+table.innerHTML = "";
+
+if(!data.notifications || data.notifications.length===0){
+table.innerHTML =
+"<tr><td colspan='2'>No notifications</td></tr>";
+return;
+}
+
+/* newest first */
+data.notifications.reverse().forEach(n=>{
+
+let time =
+n.created_at
+? new Date(n.created_at).toLocaleString("en-GB")
+: "";
+
+table.innerHTML += `
+<tr style="border-bottom:1px solid #334155">
+<td style="text-align:left">${n.message}</td>
+<td>${time}</td>
 </tr>
 `;
 
 });
 
-document.getElementById("joineeModal").style.display="flex";
+updateBellCount();
 
 });
 }
 
-function closeJoinees(){
-document.getElementById("joineeModal").style.display="none";
+function startAttendance(){
+
+navigator.geolocation.getCurrentPosition(function(position){
+
+let lat = position.coords.latitude;
+let lon = position.coords.longitude;
+
+fetch("/verify_location",{
+method:"POST",
+headers:{"Content-Type":"application/json"},
+body:JSON.stringify({
+lat:lat,
+lon:lon,
+device:getDeviceId()
+})
+})
+.then(r=>r.json())
+.then(data=>{
+
+if(!data.location){
+alert("❌ You are outside office location");
+return;
 }
 
+if(!data.device){
+alert("❌ Unauthorized device");
+return;
+}
+
+startCamera();
+
+});
+
+});
+}
+
+function getDeviceId(){
+
+let id = localStorage.getItem("device_id");
+
+if(!id){
+id = crypto.randomUUID();
+localStorage.setItem("device_id",id);
+}
+
+return id;
+}
+
+function startCamera(){
+
+navigator.mediaDevices.getUserMedia({video:true})
+.then(stream=>{
+
+let video=document.createElement("video");
+video.srcObject=stream;
+video.play();
+
+setTimeout(()=>{
+
+captureFace(video);
+
+},2000);
+
+});
+
+}
+
+function captureFace(video){
+
+let canvas=document.createElement("canvas");
+canvas.width=video.videoWidth;
+canvas.height=video.videoHeight;
+
+let ctx=canvas.getContext("2d");
+ctx.drawImage(video,0,0);
+
+let image=canvas.toDataURL("image/jpeg");
+
+fetch("/verify_face",{
+method:"POST",
+headers:{"Content-Type":"application/json"},
+body:JSON.stringify({image:image})
+})
+.then(r=>r.json())
+.then(data=>{
+
+if(data.success){
+alert("✅ Attendance Marked");
+}else{
+alert("❌ Face not recognized");
+}
+
+});
+
+}
+
+/* ===== LOAD TEAM ATTENDANCE ===== */
+
+let teamData = [];
+
+function loadTeamAttendance(){
+
+fetch("/team_attendance")
+.then(r=>r.json())
+.then(data=>{
+
+teamData = data;
+renderTeamTable(data);
+
+});
+}
+
+
+
+/* ===== LOAD EMPLOYEE LEAVE REQUEST ===== */
+
+function loadApproveLeaves(){
+
+fetch("/manager_leave_requests")
+.then(r=>r.json())
+.then(data=>{
+
+let table = document.getElementById("approveLeaveTable");
+
+table.innerHTML="";
+
+data.forEach(l=>{
+
+table.innerHTML += `
+<tr>
+<td>${l.emp_id}</td>
+<td>${l.type}</td>
+<td>${l.from_date}</td>
+<td>${l.to_date}</td>
+<td>${l.days}</td>
+
+<td>
+
+<button onclick="approveLeave('${l.id}')"
+style="background:#16a34a;color:white;border:none;padding:5px 10px;border-radius:5px">
+Approve
+</button>
+
+<button onclick="rejectLeave('${l.id}')"
+style="background:#dc2626;color:white;border:none;padding:5px 10px;border-radius:5px">
+Reject
+</button>
+
+</td>
+</tr>
+`;
+
+});
+
+});
+
+}
+
+
+
+function approveLeave(id){
+fetch("/manager_approve_leave",{
+method:"POST",
+headers:{"Content-Type":"application/json"},
+body:JSON.stringify({id:id})
+})
+.then(()=>loadManagerLeaves());
+}
+
+function rejectLeave(id){
+fetch("/manager_reject_leave",{
+method:"POST",
+headers:{"Content-Type":"application/json"},
+body:JSON.stringify({id:id})
+})
+.then(()=>loadManagerLeaves());
+}
+
+function renderTeamTable(data){
+
+let table = document.getElementById("teamAttendanceTable");
+table.innerHTML = "";
+
+data.forEach(a=>{
+table.innerHTML += `
+<tr>
+<td>${a.emp_id}</td>
+<td>${a.name}</td>
+<td>${a.date}</td>
+<td>${a.checkin || "-"}</td>
+<td>${a.checkout || "-"}</td>
+<td>${a.status}</td>
+</tr>`;
+});
+
+}
+
+function applyFilter(){
+
+let date = document.getElementById("filterDate").value;
+let name = document.getElementById("searchEmp").value.toLowerCase();
+
+let filtered = teamData.filter(a=>{
+
+let matchDate = date ? a.date === date : true;
+let matchName = name ? a.name.toLowerCase().includes(name) : true;
+
+return matchDate && matchName;
+
+});
+
+renderTeamTable(filtered);
+
+}
+
+function exportExcel(){
+
+let table = document.getElementById("teamAttendanceTable");
+
+let wb = XLSX.utils.table_to_book(table, {sheet:"Sheet1"});
+XLSX.writeFile(wb, "Team_Attendance.xlsx");
+
+}
+
+function exportPDF(){
+
+let { jsPDF } = window.jspdf;
+let doc = new jsPDF();
+
+doc.text("Team Attendance Report", 14, 10);
+
+let y = 20;
+
+teamData.forEach(a=>{
+doc.text(
+`${a.emp_id} | ${a.name} | ${a.date} | ${a.status}`,
+10, y
+);
+y += 8;
+});
+
+doc.save("attendance.pdf");
+
+}
+
+function buildPersonalDashboard(){
+
+let ontime=0,late=0,absent=0;
+
+attendance
+.filter(a => !empFilter || a.emp_id === empFilter)
+.forEach(a=>{
+if(a.checkin){
+if(a.checkin > "10:05:00") late++;
+else ontime++;
+}else{
+absent++;
+}
+});
+
+let total = ontime + late + absent;
+
+let score = total
+? Math.round((ontime*100)/total)
+: 0;
+
+document.getElementById("personalKPI").innerHTML=`
+<div class="kpi-card">
+<div class="kpi-title">Attendance Score</div>
+<div class="kpi-value">${score}%</div>
+</div>
+
+<div class="kpi-card">
+<div class="kpi-title">On Time</div>
+<div class="kpi-value">${ontime}</div>
+</div>
+
+<div class="kpi-card">
+<div class="kpi-title">Late</div>
+<div class="kpi-value">${late}</div>
+</div>
+`;
+
+drawStatusChart(ontime,late,absent);
+}
+
+function buildPersonalDashboard(){
+
+let ontime=0,late=0,absent=0;
+let monthly=new Array(12).fill(0);
+let approved=0,pending=0,rejected=0;
+
+attendance.forEach(a=>{
+
+let d=new Date(a.date);
+let m=d.getMonth();
+
+if(a.checkin){
+if(a.checkin > "10:05:00") late++;
+else ontime++;
+
+monthly[m]++;
+}else{
+absent++;
+}
+});
+
+/* leave summary */
+leaves.forEach(l=>{
+let days=parseFloat(l.days||1);
+
+if(l.status==="Approved") approved+=days;
+if(l.status==="Pending") pending+=days;
+if(l.status==="Rejected") rejected+=days;
+});
+
+/* KPI */
+let total = ontime+late+absent;
+
+let score = total ? Math.round((ontime*100)/total) : 0;
+
+let grade="C";
+if(score>=90) grade="A+";
+else if(score>=80) grade="A";
+else if(score>=70) grade="B";
+
+document.getElementById("p_kpiRow").innerHTML=`
+<div class="kpi-card">
+<div class="kpi-title">Attendance Score</div>
+<div class="kpi-value">${score}% (${grade})</div>
+</div>
+
+<div class="kpi-card">
+<div class="kpi-title">On Time Days</div>
+<div class="kpi-value">${ontime}</div>
+</div>
+
+<div class="kpi-card">
+<div class="kpi-title">Late Days</div>
+<div class="kpi-value">${late}</div>
+</div>
+
+<div class="kpi-card">
+<div class="kpi-title">Performance</div>
+<div class="kpi-value">${score>=80?"Good":"Improve"}</div>
+</div>
+`;
+
+/* charts */
+drawPersonalCharts(ontime,late,absent,monthly,approved,pending,rejected);
+}
+
+function drawPersonalCharts(o,l,a,monthly,ap,pe,re){
+
+safeCreate("p_statusChart",{
+type:"pie",
+data:{
+labels:["On Time","Late","Absent"],
+datasets:[{
+data:[o,l,a],
+backgroundColor:["#22c55e","#f59e0b","#ef4444"]
+}]
+}
+});
+
+safeCreate("p_monthlyChart",{
+type:"bar",
+data:{
+labels:["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"],
+datasets:[{
+data:monthly,
+backgroundColor:"#3b82f6"
+}]
+}
+});
+
+safeCreate("p_leaveChart",{
+type:"doughnut",
+data:{
+labels:["Approved","Pending","Rejected"],
+datasets:[{
+data:[ap,pe,re],
+backgroundColor:["#16a34a","#f59e0b","#dc2626"]
+}]
+}
+});
+}
+
+function buildTeamDashboard(){
+
+fetch("/team_attendance")
+.then(r=>r.json())
+.then(data=>{
+
+if(!data || data.length===0){
+console.log("No team data");
+return;
+}
+
+let present=0, late=0, absent=0;
+let monthly = new Array(12).fill(0);
+
+data.forEach(d=>{
+
+let date = new Date(d.date);
+let m = date.getMonth();
+
+if(d.checkin){
+
+if(d.checkin > "10:05:00"){
+late++;
+}else{
+present++;
+}
+
+monthly[m]++;
+
+}else{
+absent++;
+}
+
+});
+
+/* KPI */
+document.getElementById("teamKpiRow").innerHTML = `
+<div class="kpi-card">
+<div class="kpi-title">Total Records</div>
+<div class="kpi-value">${data.length}</div>
+</div>
+
+<div class="kpi-card">
+<div class="kpi-title">Present</div>
+<div class="kpi-value">${present}</div>
+</div>
+
+<div class="kpi-card">
+<div class="kpi-title">Late</div>
+<div class="kpi-value">${late}</div>
+</div>
+
+<div class="kpi-card">
+<div class="kpi-title">Absent</div>
+<div class="kpi-value">${absent}</div>
+</div>
+`;
+
+/* Chart 1 */
+new Chart(document.getElementById("teamStatusChart"),{
+type:"pie",
+data:{
+labels:["Present","Late","Absent"],
+datasets:[{
+data:[present,late,absent],
+backgroundColor:["#22c55e","#f59e0b","#ef4444"]
+}]
+}
+});
+
+/* Chart 2 */
+new Chart(document.getElementById("teamMonthlyChart"),{
+type:"bar",
+data:{
+labels:["Jan","Feb","Mar","Apr","May","Jun",
+"Jul","Aug","Sep","Oct","Nov","Dec"],
+datasets:[{
+label:"Attendance",
+data:monthly,
+backgroundColor:"#3b82f6"
+}]
+}
+});
+
+});
+}
+
+function loadManagerLeaves(){
+
+fetch("/manager_leave_requests")
+.then(res => res.json())
+.then(data => {
+
+console.log("DATA:", data); // debug
+
+let table = document.getElementById("approveLeaveTable");
+
+if(!table){
+    console.log("❌ Table not found");
+    return;
+}
+
+table.innerHTML = "";
+
+if(data.length === 0){
+table.innerHTML = "<tr><td colspan='6'>No Leave Requests</td></tr>";
+return;
+}
+
+data.forEach(l => {
+
+table.innerHTML += `
+<tr>
+<td>${l.emp_id}</td>
+<td>${l.type}</td>
+<td>${l.from_date}</td>
+<td>${l.to_date}</td>
+<td>${l.days}</td>
+<td>
+<button onclick="approveLeave('${l.id}')">Approve</button>
+<button onclick="rejectLeave('${l.id}')">Reject</button>
+</td>
+</tr>
+`;
+
+});
+
+})
+.catch(err => {
+console.log("ERROR:", err);
+});
+}
+function approveLeave(id){
+
+fetch("/manager_approve_leave",{
+method:"POST",
+headers:{"Content-Type":"application/json"},
+body:JSON.stringify({id:id})
+})
+.then(()=>{
+showToast("Leave Approved");
+loadManagerLeaves();
+});
+}
+
+function rejectLeave(id){
+
+fetch("/manager_reject_leave",{
+method:"POST",
+headers:{"Content-Type":"application/json"},
+body:JSON.stringify({id:id})
+})
+.then(()=>{
+showToast("Leave Rejected");
+loadManagerLeaves();
+});
+}
+
+function loadManagerLeaves(){
+
+fetch("/manager_leave_requests")
+.then(res => res.json())
+.then(data => {
+
+let table = document.getElementById("approveLeaveTable");
+
+table.innerHTML = "";
+
+if(data.length === 0){
+table.innerHTML = "<tr><td colspan='6'>No Requests</td></tr>";
+return;
+}
+
+data.forEach(l => {
+
+table.innerHTML += `
+<tr>
+<td>${l.emp_id}</td>
+<td>${l.type}</td>
+<td>${l.from_date}</td>
+<td>${l.to_date}</td>
+<td>${l.days}</td>
+<td>
+<button onclick="approveLeave('${l.id}')">Approve</button>
+<button onclick="rejectLeave('${l.id}')">Reject</button>
+</td>
+</tr>
+`;
+
+});
+
+});
+}
+let pCharts = {};
+
+function createChart(id, type, data){
+if(pCharts[id]) pCharts[id].destroy();
+
+pCharts[id] = new Chart(
+document.getElementById(id),
+{ type, data }
+);
+}
+function buildPersonalDashboard(){
+
+let ontime=0, late=0, absent=0;
+let approved=0, pending=0, rejected=0;
+
+let monthly = new Array(12).fill(0);
+let checkinAvg = new Array(12).fill(0);
+let count = new Array(12).fill(0);
+
+attendance.forEach(a=>{
+
+let m = new Date(a.date).getMonth();
+
+if(a.checkin > "10:05:00"){
+late++;
+}else{
+ontime++;
+}
+
+monthly[m]++;
+
+let [h,min] = a.checkin.split(":");
+let total = (+h)*60 + (+min);
+
+checkinAvg[m]+=total;
+count[m]++;
+
+});
+
+leaves.forEach(l=>{
+if(l.status==="Approved") approved++;
+if(l.status==="Pending") pending++;
+if(l.status==="Rejected") rejected++;
+});
+
+absent = 30 - (ontime + late);
+
+/* AVG CHECKIN */
+for(let i=0;i<12;i++){
+if(count[i]) checkinAvg[i]=Math.round(checkinAvg[i]/count[i]);
+}
+
+/* SCORE */
+let totalDays = ontime+late+absent;
+let score = Math.round((ontime/totalDays)*100);
+
+/* GRADE */
+let grade="C";
+if(score>=90) grade="A+";
+else if(score>=80) grade="A";
+else if(score>=70) grade="B";
+
+/* KPI UI */
+document.getElementById("p_kpiRow").innerHTML = `
+<div class="kpi-card"><div>Attendance</div><div class="kpi-value good">${score}%</div></div>
+<div class="kpi-card"><div>Grade</div><div class="kpi-value">${grade}</div></div>
+<div class="kpi-card"><div>On Time</div><div class="kpi-value good">${ontime}</div></div>
+<div class="kpi-card"><div>Late</div><div class="kpi-value warn">${late}</div></div>
+<div class="kpi-card"><div>Absent</div><div class="kpi-value bad">${absent}</div></div>
+<div class="kpi-card"><div>Leaves</div><div class="kpi-value">${approved}</div></div>
+`;
+
+/* CHARTS */
+
+createChart("p_statusChart","pie",{
+labels:["On Time","Late","Absent"],
+datasets:[{
+data:[ontime,late,absent],
+backgroundColor:["#22c55e","#f59e0b","#ef4444"]
+}]
+});
+
+createChart("p_monthlyChart","bar",{
+labels:["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"],
+datasets:[{
+data:monthly,
+backgroundColor:"#3b82f6"
+}]
+});
+
+createChart("p_leaveChart","doughnut",{
+labels:["Approved","Pending","Rejected"],
+datasets:[{
+data:[approved,pending,rejected],
+backgroundColor:["#16a34a","#f59e0b","#dc2626"]
+}]
+});
+
+createChart("p_timeChart","line",{
+labels:["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"],
+datasets:[{
+data:checkinAvg,
+borderColor:"#22c55e",
+fill:false
+}]
+});
+
+/* INSIGHTS */
+generateInsights(score, late);
+}
+function generateInsights(score, late){
+
+let msg="";
+
+if(late > 5){
+msg += "⚠️ You were late "+late+" times<br>";
+}
+
+if(score > 85){
+msg += "🔥 Excellent attendance performance<br>";
+}
+else if(score > 70){
+msg += "👍 Good consistency<br>";
+}
+else{
+msg += "⚠️ Attendance dropping<br>";
+}
+
+document.getElementById("insightsBox").innerHTML = msg;
+}
+function buildMiniCalendar(){
+
+let cal = document.getElementById("miniCalendar");
+cal.innerHTML="";
+
+attendance.forEach(a=>{
+
+let color = "#22c55e";
+
+if(a.checkin > "10:05:00") color="#f59e0b";
+
+let div = document.createElement("div");
+div.className="day";
+div.style.background=color;
+div.innerText = new Date(a.date).getDate();
+
+cal.appendChild(div);
+
+});
+}
+function initFilters(){
+
+let month = document.getElementById("monthFilter");
+let year = document.getElementById("yearFilter");
+
+for(let i=0;i<12;i++){
+month.innerHTML += `<option value="${i}">${i+1}</option>`;
+}
+
+for(let y=2023;y<=2030;y++){
+year.innerHTML += `<option>${y}</option>`;
+}
+
+month.onchange = buildPersonalDashboard;
+year.onchange = buildPersonalDashboard;
+
+}
+let teamCharts = {};
+
+function createTeamChart(id, type, data){
+if(teamCharts[id]) teamCharts[id].destroy();
+
+teamCharts[id] = new Chart(
+document.getElementById(id),
+{ type, data }
+);
+}
+async function buildTeamDashboard(){
+
+let [attRes, leaveRes, empRes] = await Promise.all([
+fetch("/attendance").then(r=>r.json()),
+fetch("/leaves").then(r=>r.json()),
+fetch("/team_employees").then(r=>r.json())
+]);
+
+let attendance = attRes;
+let leaves = leaveRes;
+let employees = empRes;
+
+/* MAP */
+let empStats = {};
+
+employees.forEach(e=>{
+empStats[e.emp_id] = {
+name:e.name,
+present:0,
+late:0,
+absent:0,
+leave:0
+};
+});
+
+/* PROCESS ATTENDANCE */
+attendance.forEach(a=>{
+
+let e = empStats[a.emp_id];
+if(!e) return;
+
+if(a.checkin > "10:05:00"){
+e.late++;
+}else{
+e.present++;
+}
+});
+
+/* PROCESS LEAVES */
+leaves.forEach(l=>{
+let e = empStats[l.emp_id];
+if(!e) return;
+
+if(l.status==="Approved"){
+e.leave++;
+}
+});
+
+/* KPI */
+let total = employees.length;
+let present=0,late=0,absent=0,leaveCount=0;
+
+let performanceData = [];
+
+Object.values(empStats).forEach(e=>{
+
+present += e.present;
+late += e.late;
+leaveCount += e.leave;
+
+let totalDays = e.present + e.late + e.absent + 1;
+let score = Math.round((e.present/totalDays)*100);
+
+performanceData.push({name:e.name,score});
+
+});
+
+/* BEST + WORST */
+performanceData.sort((a,b)=>b.score-a.score);
+
+let best = performanceData[0];
+let worst = performanceData[performanceData.length-1];
+
+/* KPI UI */
+document.getElementById("teamKpiRow").innerHTML = `
+<div class="kpi-card"><div>Total</div><div class="kpi-value">${total}</div></div>
+<div class="kpi-card"><div>Present</div><div class="kpi-value good">${present}</div></div>
+<div class="kpi-card"><div>Late</div><div class="kpi-value warn">${late}</div></div>
+<div class="kpi-card"><div>Leave</div><div class="kpi-value">${leaveCount}</div></div>
+<div class="kpi-card"><div>Best</div><div class="kpi-value good">${best.name} (${best.score}%)</div></div>
+<div class="kpi-card"><div>Worst</div><div class="kpi-value bad">${worst.name} (${worst.score}%)</div></div>
+`;
+
+/* CHARTS */
+
+createTeamChart("teamStatusChart","pie",{
+labels:["On Time","Late","Absent"],
+datasets:[{
+data:[present,late,absent],
+backgroundColor:["#22c55e","#f59e0b","#ef4444"]
+}]
+});
+
+/* PERFORMANCE BAR */
+createTeamChart("teamPerformanceChart","bar",{
+labels:performanceData.map(x=>x.name),
+datasets:[{
+data:performanceData.map(x=>x.score),
+backgroundColor:"#3b82f6"
+}]
+});
+
+/* TABLE */
+let table="";
+performanceData.forEach(e=>{
+let status = e.score > 80 ? "Good" : "Warning";
+
+table+=`
+<tr>
+<td>${e.name}</td>
+<td>${e.score}%</td>
+<td>-</td>
+<td>-</td>
+<td>${status}</td>
+</tr>`;
+});
+
+document.getElementById("teamTable").innerHTML = table;
+
+/* INSIGHTS */
+generateTeamInsights(performanceData,late,leaveCount);
+
+/* ALERTS */
+generateAlerts(late,leaveCount,total);
+
+}
+function generateTeamInsights(data,late,leave){
+
+let msg="";
+
+let frequentLate = data.filter(e=>e.score < 70).length;
+
+if(frequentLate > 2){
+msg += `⚠️ ${frequentLate} employees performing low<br>`;
+}
+
+msg += `🏆 Top Performer: ${data[0].name} (${data[0].score}%)<br>`;
+msg += `📉 Low Performer: ${data[data.length-1].name} (${data[data.length-1].score}%)<br>`;
+msg += `📅 ${leave} employees on leave<br>`;
+
+document.getElementById("teamInsights").innerHTML = msg;
+}
+function generateAlerts(late,leave,total){
+
+let msg="";
+
+if(late > total*0.3){
+msg += `<div class="alert-red">High late entries</div>`;
+}
+
+if(leave > total*0.2){
+msg += `<div class="alert-yellow">Too many leaves</div>`;
+}
+
+if(msg===""){
+msg = `<div class="alert-green">All good 👍</div>`;
+}
+
+document.getElementById("alertBox").innerHTML = msg;
+}
+function applyFilters(){
+buildTeamDashboard();
+}
+setInterval(buildTeamDashboard,10000);
 </script>
 
 <!-- ✅ ADD HERE (BEFORE BODY CLOSE) -->
@@ -2637,29 +4644,6 @@ document.getElementById("joineeModal").style.display="none";
 <div id="notificationContainer" class="notify-container"></div>
 
 
-<div id="joineeModal" class="modal">
-<div class="modal-box" style="width:700px">
 
-<div class="modal-header">
-<h3>New Joinees</h3>
-<span class="close" onclick="closeJoinees()">✖</span>
-</div>
-
-<div style="max-height:400px;overflow:auto">
-<table style="width:100%;border-collapse:collapse">
-<thead>
-<tr>
-<th>Employee ID</th>
-<th>Name</th>
-<th>Department</th>
-<th>Joined On</th>
-</tr>
-</thead>
-<tbody id="joineeTable"></tbody>
-</table>
-</div>
-
-</div>
-</div>
 </body>
 </html>

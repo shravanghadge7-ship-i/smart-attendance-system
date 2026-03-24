@@ -5,7 +5,15 @@
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
 <style>
-body{margin:0;background:#0f172a;font-family:Arial;color:white;}
+body{
+margin:0;
+background:#0f172a;
+font-family:Arial;
+color:white;
+
+/* ⭐ ADD */
+overflow:hidden;
+}
 /* ===== NEW CLEAN SIDEBAR ===== */
 
 #menuBtn{
@@ -18,8 +26,8 @@ margin-right:15px;
 #sidebar{
 position:fixed;
 left:-240px;
-top:0;
-height:100%;
+top:70px;
+height:calc(100vh - 70px);   /* full height */
 width:240px;
 background:#0b1120;
 padding:30px 15px;
@@ -27,6 +35,10 @@ transition:.3s ease;
 box-shadow:4px 0 20px rgba(0,0,0,.4);
 display:flex;
 flex-direction:column;
+
+/* ⭐ ADD THIS */
+overflow-y:auto;      /* enable sidebar scroll */
+scrollbar-width:thin; /* optional */
 }
 
 #sidebar a{
@@ -45,7 +57,19 @@ transition:.2s;
 background:#1e293b;
 transform:translateX(4px);
 }
-.main{margin-left:30px;padding:40px;margin-top:70px;}
+.main{
+margin-left:0;
+padding:90px 30px 30px 30px;
+transition:0.3s;
+
+/* ⭐ ADD THIS */
+height:100vh;
+overflow-y:auto;
+}
+
+.main.shifted{
+margin-left:240px;
+}
 .section{display:none;}
 .active{display:block;}
 .profile-card{background:#1e293b;padding:20px;border-radius:10px;max-width:300px;}
@@ -179,6 +203,14 @@ gap:5px;
 cursor:pointer;
 text-align:right;
 font-weight:bold;
+}
+.section{
+padding-top:10px;
+}
+
+#sidebar{
+top:70px;   /* below header */
+height:calc(100% - 70px);
 }
 
 @keyframes pulse{
@@ -1075,6 +1107,11 @@ background:#1d4ed8;
 transform:translateY(-2px);
 box-shadow:0 6px 15px rgba(37,99,235,.4);
 }
+table{
+max-height:400px;
+overflow-y:auto;
+display:block;
+}
 
 </style>
 </head>
@@ -1137,6 +1174,7 @@ box-shadow:0 6px 15px rgba(37,99,235,.4);
 
 <div id="sidebar">
 
+<a onclick="openTab('home')" class="activeMenu">🏠 Home</a>
 <a onclick="openTab('profile')">👤 Profile</a>
 <a onclick="openTab('dashboard')">📊 Dashboard</a>
 <a onclick="openTab('attendance')">📅 Attendance</a>
@@ -1345,6 +1383,15 @@ Loading...
 </div>
 
 </div>
+<button class="btn" onclick="registerFace()">📸 Register Face</button>
+
+<br><br>
+
+<video id="video" width="300" autoplay playsinline 
+style="border-radius:10px; display:none;"></video>
+<canvas id="canvas" style="display:none;"></canvas>
+
+<div id="faceStatus" style="margin-top:10px;"></div>
 </div>
 
 <div id="dashboard" class="section">
@@ -1381,6 +1428,10 @@ Loading...
 <div id="leaveBox" style="margin-bottom:10px;font-weight:bold">
 Leave Balance: <span id="leaveCount">21</span> / 21
 </div>
+
+<button onclick="startAttendance()" style="margin-bottom:15px">
+📸 Mark Attendance
+</button>
 
 <div class="calendar-header-new">
 
@@ -1537,7 +1588,7 @@ Submit Leave Request
 <div id="toast" class="toast"></div>
 
 <script>
-
+let video = document.getElementById("video");
 
 
 function uploadPhoto(e){
@@ -1553,6 +1604,13 @@ showToast("Profile Saved");
 fetch("/profile_full")
 .then(r=>r.json())
 .then(d=>{
+
+window.joinDate = d.created_at ? new Date(d.created_at) : null;
+
+if(window.joinDate){
+window.joinDate.setHours(0,0,0,0);
+}
+console.log("JOIN DATE:", window.joinDate);
 
 v_emp.innerText = d.emp_id || "";
 v_name.innerText = d.name || "";
@@ -1583,33 +1641,65 @@ document.getElementById("menuAvatar").innerText = letter;
 document.getElementById("menuName").innerText = d.name || "Employee";
 document.getElementById("menuId").innerText = d.emp_id || "";
 
+if(d.face_encoding){
+    document.getElementById("faceStatus").innerText = "✅ Face Registered";
+}else{
+    document.getElementById("faceStatus").innerText = "❌ Face Not Registered";
+}
+
 });
 
 let open=false;
-function toggle(){sidebar.style.left=open?"-230px":"0";open=!open;}
+function toggle(){
+
+open = !open;
+
+sidebar.style.left = open ? "0" : "-240px";
+
+let main = document.querySelector(".main");
+
+if(open){
+main.classList.add("shifted");
+}else{
+main.classList.remove("shifted");
+}
+
+}
 
 /*leave*/
 function openTab(id){
 
+/* remove active section */
 document.querySelectorAll(".section")
 .forEach(s=>s.classList.remove("active"));
 
 document.getElementById(id).classList.add("active");
 
-toggle();
+/* ===== MENU ACTIVE HIGHLIGHT ===== */
+document.querySelectorAll("#sidebar a")
+.forEach(a=>a.classList.remove("activeMenu"));
 
-/* ⭐ DASHBOARD LOAD */
-if(id === "dashboard"){
-    setTimeout(()=>{ buildDashboard(); },200);
+let clicked = [...document.querySelectorAll("#sidebar a")]
+.find(a => a.getAttribute("onclick")?.includes(id));
+
+if(clicked){
+clicked.classList.add("activeMenu");
 }
 
-/* ⭐ AUTO LOAD THIS YEAR LEAVE HISTORY */
+/* close sidebar */
+toggle();
+
+/* dashboard load */
+if(id === "dashboard"){
+setTimeout(()=>{ buildDashboard(); },200);
+}
+
+/* leave history load */
 if(id === "history"){
-    setTimeout(()=>{
-        let firstTab =
-        document.querySelector(".tab");
-        loadYear('current', firstTab);
-    },200);
+setTimeout(()=>{
+let firstTab = document.querySelector(".tab");
+loadYear('current', firstTab);
+},200);
 }
 }
 let attendance=[],leaves=[];
@@ -1626,16 +1716,23 @@ leaves = l;
 
 renderMonth();
 enhancedCalendar();
+loadCalendar();
+loadLeaveDetails();
+
 
 /* ================= AUTO NOTIFICATION ENGINE ================= */
 
-let today =
-new Date().toISOString().slice(0,10);
+let today = new Date().toISOString().slice(0,10);
 
-let record =
-attendance.find(x=>x.date===today);
+let record = attendance.find(x=>x.date===today);
 
-/* Late / OnTime / Absent */
+/* ===== RUN ONLY ONCE PER DAY ===== */
+let lastNotifyDate = localStorage.getItem("lastNotifyDate");
+
+if(!(joinDate && new Date(today) < joinDate)){
+
+if(lastNotifyDate !== today){
+
 if(record){
 
 if(record.checkin > "10:05:00"){
@@ -1648,10 +1745,14 @@ createInstantNotification("You are Present On Time ✅");
 
 let now=new Date();
 
-/* ignore sunday */
 if(now.getDay()!==0){
 createInstantNotification("You are Absent today ❌");
 }
+}
+
+localStorage.setItem("lastNotifyDate", today);
+}
+
 }
 
 /* Tomorrow reminder */
@@ -1811,7 +1912,10 @@ if(isHoliday){
 }
 
 /* APPROVED LEAVE */
-else if(leaveStatus && leaveStatus.status === "Approved"){
+else if(
+leaveStatus &&
+(leaveStatus.status === "Approved" || leaveStatus.status === "Manager Approved")
+){
     status = `<div class="status approvedTxt">
     ${leaveStatus.type} Approved
     </div>`;
@@ -1856,27 +1960,30 @@ else if(hasAttendance && !isHoliday){
     }
 }
 
-/* NO ATTENDANCE + NO LEAVE */
-
 else{
 
-    let currentDate = new Date(date);
-    currentDate.setHours(0,0,0,0);
+let currentDate = new Date(date);
+currentDate.setHours(0,0,0,0);
 
-    /* Future date */
-    if(currentDate > todayDate){
-        status = `<div class="status">-</div>`;
-    }
+/* ❌ BEFORE JOINING DATE */
+if(window.joinDate && currentDate < window.joinDate){
+status = `<div class="status">-</div>`;
+}
 
-    /* Today without checkin */
-    else if(currentDate.getTime() === todayDate.getTime()){
-        status = `<div class="status pendingTxt">Waiting</div>`;
-    }
+/* Future date */
+else if(currentDate > todayDate){
+status = `<div class="status">-</div>`;
+}
 
-    /* Past date */
-    else{
-        status = `<div class="status rejectedTxt">Absent</div>`;
-    }
+/* Today */
+else if(currentDate.getTime() === todayDate.getTime()){
+status = `<div class="status pendingTxt">Waiting</div>`;
+}
+
+/* AFTER JOINING → THEN ABSENT */
+else{
+status = `<div class="status rejectedTxt">Absent</div>`;
+}
 }
 
 cal.innerHTML+=`
@@ -1934,10 +2041,9 @@ let end = new Date(l.to_date);
 /* ⭐ COUNT ONLY CURRENT YEAR LEAVES */
 if(start.getFullYear() === selectedYear && l.status==="Approved"){
 
-    let diff =
-    Math.floor((end-start)/(1000*60*60*24))+1;
+    let days = parseFloat(l.days || 1);
 
-    approvedCount += diff;
+    approvedCount += days;
 }
 
 /* calendar coloring */
@@ -1948,7 +2054,7 @@ for(let d=new Date(start); d<=end; d.setDate(d.getDate()+1)){
 
     let key = local.toISOString().slice(0,10);
 
-    leaveMap[key]=l.status;
+    leaveMap[key]=l;
 }
 });
 
@@ -1985,13 +2091,15 @@ day.classList.remove(
 "leaveRejected"
 );
 
-if(leaveMap[ds]==="Pending")
+let st = leaveMap[ds].status;
+
+if(st==="Pending")
 day.classList.add("leavePending");
 
-if(leaveMap[ds]==="Approved")
+if(st==="Approved" || st==="Manager Approved")
 day.classList.add("leaveApproved");
 
-if(leaveMap[ds]==="Rejected")
+if(st==="Rejected" || st==="Manager Rejected")
 day.classList.add("leaveRejected");
 }
 });
@@ -2016,7 +2124,8 @@ let approvedDays = 0;
 leaves.forEach(l=>{
 let y = new Date(l.from_date).getFullYear();
 
-if(y === yearNow && l.status==="Approved"){
+if(y === yearNow && 
+   (l.status==="Approved" || l.status==="Manager Approved")){
 approvedDays += parseFloat(l.days || 1);
 }
 });
@@ -2294,7 +2403,8 @@ if(leaveYear !== balanceYear) return;
 
 let days = parseFloat(l.days || 1);
 
-if(l.status==="Approved") approved += days;
+if(l.status==="Approved" || l.status==="Manager Approved")
+approved += days;
 if(l.status==="Pending") pending += days;
 if(l.status==="Rejected") rejected += days;
 
@@ -2444,12 +2554,8 @@ setInterval(loadFloatingNotifications,20000);
 
 function createInstantNotification(message){
 
-/* prevent duplicate */
-if(localStorage.getItem("lastNotify")===message) return;
+/* ALWAYS STORE (no duplicate block) */
 
-localStorage.setItem("lastNotify",message);
-
-/* save into backend */
 fetch("/add_notification",{
 method:"POST",
 headers:{"Content-Type":"application/json"},
@@ -2464,7 +2570,7 @@ read:false
 });
 
 /* refresh bell */
-loadNotifications();
+updateBellCount();
 }
 
 
@@ -2546,6 +2652,7 @@ leaveMap[key]=l.status;
 let startYear=new Date(currentYear,0,1);
 
 for(let d=new Date(startYear); d<=today; d.setDate(d.getDate()+1)){
+if(window.joinDate && d < window.joinDate) continue;
 
 /* skip sunday */
 if(d.getDay()===0) continue;
@@ -2567,7 +2674,7 @@ let record=attendanceMap[key];
 let leaveStatus=leaveMap[key];
 
 /* Approved leave */
-if(leaveStatus==="Approved") continue;
+if(leaveStatus==="Approved" || leaveStatus==="Manager Approved") continue;
 
 /* Rejected leave + no attendance */
 if(leaveStatus==="Rejected" && !record){
@@ -3133,6 +3240,237 @@ updateBellCount();
 
 });
 }
+
+function startAttendance(){
+
+navigator.geolocation.getCurrentPosition(async pos => {
+
+let lat = pos.coords.latitude;
+let lon = pos.coords.longitude;
+let device = navigator.userAgent;
+
+let image = captureImage(); // your existing canvas code
+
+let res = await fetch("/mark_attendance", {
+method:"POST",
+headers:{"Content-Type":"application/json"},
+body: JSON.stringify({lat, lon, device, image})
+});
+
+let data = await res.json();
+alert(data.msg || data.type);
+
+});
+
+}
+
+function captureFace(video){
+
+let canvas = document.getElementById("canvas");
+let ctx = canvas.getContext("2d");
+
+canvas.width = video.videoWidth;
+canvas.height = video.videoHeight;
+
+ctx.drawImage(video, 0, 0);
+
+let image = canvas.toDataURL("image/jpeg");
+
+fetch("/verify_face",{
+method:"POST",
+headers:{"Content-Type":"application/json"},
+body:JSON.stringify({image:image})
+})
+.then(r=>r.json())
+.then(d=>{
+
+video.srcObject.getTracks().forEach(track=>track.stop());
+video.style.display="none";
+
+if(d.success){
+
+if(d.type==="checkin"){
+showToast("✅ Check-in Success");
+}
+else if(d.type==="checkout"){
+showToast("🚪 Check-out Success");
+}
+else{
+showToast("⚠ Already Marked");
+}
+
+}else{
+showToast("❌ "+d.msg);
+}
+
+})
+.catch(()=>{
+showToast("❌ Server error");
+});
+}
+
+
+function captureFace(video){
+
+let canvas = document.getElementById("canvas");
+let ctx = canvas.getContext("2d");
+
+canvas.width = video.videoWidth;
+canvas.height = video.videoHeight;
+
+ctx.drawImage(video, 0, 0);
+
+let image = canvas.toDataURL("image/jpeg");
+
+fetch("/verify_face",{
+method:"POST",
+headers:{"Content-Type":"application/json"},
+body:JSON.stringify({image:image})
+})
+.then(r=>r.json())
+.then(d=>{
+
+video.srcObject.getTracks().forEach(track=>track.stop());
+video.style.display="none";
+
+if(d.success){
+
+if(d.type==="checkin"){
+showToast("✅ Check-in Success");
+}
+else if(d.type==="checkout"){
+showToast("🚪 Check-out Success");
+}
+else{
+showToast("⚠ Already Marked");
+}
+
+}else{
+showToast("❌ "+d.msg);
+}
+
+})
+.catch(err=>{
+console.error(err);
+showToast("❌ Server error");
+});
+}
+
+
+
+function captureFace(video){
+
+let canvas = document.createElement("canvas");
+canvas.width = video.videoWidth;
+canvas.height = video.videoHeight;
+
+let ctx = canvas.getContext("2d");
+ctx.drawImage(video, 0, 0);
+
+let image = canvas.toDataURL("image/jpeg");
+
+// stop camera
+let tracks = video.srcObject.getTracks();
+tracks.forEach(track => track.stop());
+
+video.style.display = "none";  // hide after capture
+
+fetch("/verify_face", {
+method: "POST",
+headers: { "Content-Type": "application/json" },
+body: JSON.stringify({ image: image })
+})
+.then(r => r.json())
+.then(data => {
+
+if(data.success){
+
+    if(data.type === "checkin"){
+        showToast("✅ Check-in Successful");
+    }
+    else if(data.type === "checkout"){
+        showToast("✅ Check-out Successful");
+    }
+    else{
+        showToast("⚠ Already Marked Today");
+    }
+
+    refreshData();  // update calendar
+
+}else{
+    alert("❌ Face not recognized");
+}
+
+})
+.catch(err=>{
+    console.error(err);
+    alert("Server error");
+});
+
+}
+
+
+
+
+
+
+
+
+// 📸 Register Face
+function registerFace() {
+
+video = document.getElementById("video");
+
+navigator.mediaDevices.getUserMedia({video:true})
+.then(stream=>{
+
+video.srcObject = stream;
+
+video.onloadedmetadata = () => {
+
+let canvas = document.getElementById("canvas");
+let ctx = canvas.getContext("2d");
+
+canvas.width = video.videoWidth;
+canvas.height = video.videoHeight;
+
+setTimeout(()=>{
+
+ctx.drawImage(video, 0, 0);
+
+let image = canvas.toDataURL("image/jpeg");
+
+/* stop camera */
+video.srcObject.getTracks().forEach(t=>t.stop());
+
+fetch("/register_face", {
+method: "POST",
+headers: {"Content-Type": "application/json"},
+body: JSON.stringify({ image: image })
+})
+.then(res => res.json())
+.then(data => {
+
+if(data.success){
+alert("✅ Face Registered");
+location.reload();
+}else{
+alert("❌ " + (data.msg || "Failed"));
+}
+
+});
+
+},1500);
+
+};
+
+})
+.catch(()=>{
+alert("Camera not allowed");
+});
+}
+
+
 </script>
 
 <!-- ✅ ADD HERE (BEFORE BODY CLOSE) -->

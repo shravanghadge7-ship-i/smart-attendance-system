@@ -10,6 +10,9 @@ margin:0;
 font-family:Segoe UI;
 background:#0f172a;
 color:#e2e8f0;
+
+/* ⭐ ADD */
+overflow:hidden;
 }
 
 /* ===== SIDEBAR ===== */
@@ -21,8 +24,12 @@ position:fixed;
 background:linear-gradient(180deg,#0f172a,#020617);
 padding-top:30px;
 border-right:1px solid #1e293b;
-}
+flex-shrink:0;
+z-index:1000;
 
+/* ⭐ ADD THIS */
+overflow-y:auto;
+}
 .sidebar h2{
 font-size:20px;
 letter-spacing:1px;
@@ -55,12 +62,31 @@ border-left:3px solid #3b82f6;
 color:white;
 }
 
+.sidebar.collapsed{
+width:80px;
+}
+
+.sidebar.collapsed + .main{
+margin-left:80px;
+width:calc(100% - 80px);
+}
+
+body{
+overflow-x:hidden;
+}
+
+
 /* ===== MAIN ===== */
 
 .main{
 margin-left:260px;
 padding:30px;
-transition:.3s;
+width:calc(100% - 260px);
+height:100vh;          /* ⭐ ADD */
+overflow-y:auto;       /* ⭐ ADD */
+overflow-x:hidden;
+box-sizing:border-box;
+position:relative; 
 }
 
 /* ===== TOPBAR ===== */
@@ -761,6 +787,35 @@ color:white;
 </div>
 
 </div>
+
+<!-- ================= HR LEAVE REQUESTS ================= -->
+<div id="leaveRequests" style="display:none">
+
+<div class="table-card">
+
+<h3>HR Leave Requests</h3>
+
+<table>
+<thead>
+<tr>
+<th>Name</th>
+<th>Email</th>
+<th>Type</th>
+<th>From</th>
+<th>To</th>
+<th>Reason</th>
+<th>Status</th>
+<th>Action</th>
+</tr>
+</thead>
+
+<tbody id="hrLeaveTable"></tbody>
+
+</table>
+
+</div>
+</div>
+
 <!-- ================= REPORTS ================= -->
 
 <div id="reports" style="display:none">
@@ -791,6 +846,7 @@ function showSection(id){
 document.getElementById("dashboard").style.display="none";
 document.getElementById("attendance").style.display="none";
 document.getElementById("reports").style.display="none";
+document.getElementById("leaveRequests").style.display="none";
 
 document.getElementById(id).style.display="block";
 
@@ -808,6 +864,7 @@ document.getElementById("menu-" + id).classList.add("activeMenu");
 if(id==="dashboard") loadDashboard();
 if(id==="attendance") loadAttendance();
 if(id==="reports") loadReports();
+if(id==="leaveRequests") loadHRLeaves();
 }
 
 
@@ -1337,6 +1394,73 @@ table.innerHTML += `
 });
 
 });
+}
+
+// ================= LOAD HR LEAVES =================
+function loadHRLeaves(){
+
+fetch("/admin_hr_leaves")
+.then(res=>res.json())
+.then(data=>{
+
+let html = "";
+
+data.forEach(l=>{
+
+let statusColor =
+l.status==="Pending" ? "#facc15" :
+l.status==="Approved" ? "#22c55e" :
+"#ef4444";
+
+html += `
+<tr>
+<td>${l.name}</td>
+<td>${l.email}</td>
+<td>${l.type}</td>
+<td>${l.from_date}</td>
+<td>${l.to_date}</td>
+<td>${l.reason}</td>
+
+<td style="color:${statusColor}">
+${l.status}
+</td>
+
+<td>
+${l.status==="Pending" ? `
+<button onclick="approveLeave('${l.id}')" style="background:#22c55e">Approve</button>
+<button onclick="rejectLeave('${l.id}')" style="background:#ef4444">Reject</button>
+` : "-"}
+</td>
+</tr>
+`;
+
+});
+
+document.getElementById("hrLeaveTable").innerHTML = html;
+
+});
+}
+
+// ================= APPROVE =================
+function approveLeave(id){
+
+fetch("/admin_approve_leave",{
+method:"POST",
+headers:{"Content-Type":"application/json"},
+body:JSON.stringify({id})
+})
+.then(()=> loadHRLeaves());
+}
+
+// ================= REJECT =================
+function rejectLeave(id){
+
+fetch("/admin_reject_leave",{
+method:"POST",
+headers:{"Content-Type":"application/json"},
+body:JSON.stringify({id})
+})
+.then(()=> loadHRLeaves());
 }
 </script>
 

@@ -3,35 +3,35 @@ from datetime import datetime
 import re
 import os
 
+# 🔕 HIDE TENSORFLOW WARNINGS
+os.environ["TF_CPP_MIN_LOG_LEVEL"] = "3"
+
+import base64
+import cv2
+from deepface import DeepFace
+import numpy as np
+import requests
+
 app = Flask(__name__)
 app.secret_key = "smartattendance"
 
 # ✅ GLOBAL ERROR HANDLER
 @app.errorhandler(Exception)
 def handle_exception(e):
-    print("GLOBAL ERROR:", e)
-    return jsonify({"error": "Server error occurred"}), 500
+    print("ERROR:", e)
+    return jsonify({"error": str(e)}), 500
 # ================= SUPABASE SAFE CLIENT =================
 from supabase import create_client
+from supabase.lib.client_options import ClientOptions
 import httpx
 
 SUPABASE_URL = "https://orrohkftvvhqogzvekrt.supabase.co"
 SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9ycm9oa2Z0dnZocW9nenZla3J0Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3MjMzMDc3MiwiZXhwIjoyMDg3OTA2NzcyfQ.iQk9sI6FA7thWAB2eRiGO0b2_5uepfI_RnRuoacnZxU"
 
 
-custom_client = httpx.Client(
-    timeout=20.0,
-    http2=False,  # VERY IMPORTANT (disable HTTP2)
-    limits=httpx.Limits(
-        max_connections=5,
-        max_keepalive_connections=2
-    )
-)
-
 supabase = create_client(
     SUPABASE_URL,
-    SUPABASE_KEY,
-
+    SUPABASE_KEY
 )
 
 # ================= SUPABASE HELPER =================
@@ -47,17 +47,18 @@ def get_all(table, column=None, value=None):
     return query.execute().data
 
 def insert_data(table, data):
-    res = supabase.table(table).insert(data).execute()
+    try:
+        res = supabase.table(table).insert(data).execute()
 
-    if hasattr(res, "error") and res.error:
-        print("SUPABASE INSERT ERROR:", res.error)
+        if hasattr(res, "error") and res.error:
+            print("SUPABASE INSERT ERROR:", res.error)
+            return False
+
+        return True
+
+    except Exception as e:
+        print("INSERT ERROR:", e)
         return False
-
-    if not res.data:
-        print("SUPABASE INSERT FAILED - NO DATA RETURNED")
-        return False
-
-    return True
 
 def update_data(table, column, value, data):
     supabase.table(table).update(data).eq(column, value).execute()
@@ -140,7 +141,7 @@ def login():
 
             session["emp_id"]=emp_id
             session["role"]=user["role"]
-            session["name"]=emp.get("name","Employee")
+            session["name"]=emp.get("name","Employee") if emp else "Employee"
             session["photo"]=user.get("photo","https://via.placeholder.com/100")
 
             return redirect("/"+session["role"])
@@ -186,7 +187,9 @@ def profile_full():
         "pan":data.get("pan",""),
         "aadhaar":data.get("aadhaar",""),
         "uan":data.get("uan",""),
-        "photo":session.get("photo")
+        "photo":session.get("photo"),
+
+        "face_encoding": data.get("face_encoding")
     })
 
 # ======================================================
@@ -254,6 +257,19 @@ def employee():
         return render_template("employee.html")
     return redirect("/login")
 
+
+# ======================================================
+# MANAGER PAGE
+# ======================================================
+
+@app.route("/manager")
+def manager():
+
+    if session.get("role") != "manager":
+        return redirect("/login")
+
+    return render_template("manager.html")
+
 # ======================================================
 # HR DASHBOARD
 # ======================================================
@@ -267,6 +283,8 @@ def hr():
 
     docs = supabase.table("leaves") \
         .select("*") \
+        .eq("to_id", session.get("emp_id")) \
+        .eq("status","Pending") \
         .order("applied_on", desc=True) \
         .execute().data
 
@@ -295,11 +313,10 @@ def hr_notifications():
     docs = supabase.table("leaves") \
         .select("*") \
         .eq("status", "Pending") \
+        .eq("to_id", session.get("emp_id")) \
         .execute().data
-    
-    count = len(docs)
 
-    return jsonify({"pending":count})
+    return jsonify({"pending": len(docs)})
 
 # ======================================================
 # ATTENDANCE API
@@ -319,6 +336,70 @@ def attendance_data():
     return jsonify(docs)
 
 # ======================================================
+# MANAGER TEAM ATTENDANCE
+# ======================================================
+@app.route("/team_attendance")
+def team_attendance():
+
+    # ❌ block non-manager
+    if session.get("role") != "manager":
+        return jsonify([])
+
+    manager_id = session.get("emp_id")
+
+    print("Manager ID:", manager_id)
+
+    # ✅ STEP 1: GET TEAM MEMBERS
+    team = supabase.table("employees") \
+        .select("emp_id,name,manager_id") \
+        .eq("manager_id", manager_id) \
+        .execute().data
+
+    print("Team Data:", team)
+
+    # ❌ If no team → return empty
+    if not team:
+        return jsonify([])
+
+    # ✅ STEP 2: GET EMPLOYEE IDS
+    emp_ids = [e["emp_id"] for e in team]
+
+    print("Employee IDs:", emp_ids)
+
+    # ✅ STEP 3: GET ATTENDANCE (LATEST FIRST)
+    docs = supabase.table("attendance") \
+        .select("*") \
+        .in_("emp_id", emp_ids) \
+        .order("date", desc=True) \
+        .execute().data
+
+    print("Attendance Records:", docs)
+
+    # ❌ If no attendance
+    if not docs:
+        return jsonify([])
+
+
+
+    # ✅ STEP 5: FINAL RESPONSE
+    result = []
+
+    for a in docs:
+
+        emp = next((e for e in team if e["emp_id"] == a["emp_id"]), None)
+
+        result.append({
+            "emp_id": a["emp_id"],
+            "name": emp["name"] if emp else "",
+            "date": a.get("date"),
+            "checkin": a.get("checkin"),
+            "checkout": a.get("checkout"),
+            "status": a.get("status")
+        })
+
+    return jsonify(result)
+
+# ======================================================
 # LEAVES API
 # ======================================================
 @app.route("/leaves")
@@ -332,6 +413,95 @@ def leaves_data():
     return jsonify(docs)
 
 
+
+# ======================================================
+# MANAGER LEAVE REQUESTS
+# ======================================================
+@app.route("/manager_leave_requests")
+def manager_leave_requests():
+
+    if session.get("role") != "manager":
+        return jsonify([])
+
+    manager_id = session.get("emp_id")
+
+    response = supabase.table("leaves") \
+        .select("*") \
+        .eq("to_id", manager_id) \
+        .eq("status", "Pending") \
+        .order("applied_on", desc=True) \
+        .execute()
+
+    return jsonify(response.data if response.data else [])
+
+
+# ======================================================
+# MANAGER APPROVE LEAVE
+# ======================================================
+@app.route("/manager_approve_leave", methods=["POST"])
+def manager_approve_leave():
+
+    if session.get("role") != "manager":
+        return jsonify({"status": "unauthorized"})
+
+    data = request.json
+    leave_id = data["id"]
+
+    leave = get_one("leaves", "id", leave_id)
+
+    if not leave:
+        return jsonify({"status": "not_found"})
+
+    # ✅ GET MANAGER DETAILS (FOR HR ROUTING)
+    manager = get_one("employees", "emp_id", session.get("emp_id"))
+
+    # 🔥 UPDATE → SEND TO HR
+    update_data("leaves", "id", leave_id, {
+        "status": "Manager Approved",
+        "to_id": manager.get("hr_id")   # 🔥 IMPORTANT
+    })
+
+    # ✅ NOTIFICATION TO EMPLOYEE
+    insert_data("notifications", {
+        "emp_id": leave["emp_id"],
+        "message": "✅ Your leave approved by Manager",
+        "read": False,
+        "created_at": datetime.utcnow().isoformat()
+    })
+
+    return jsonify({"success": True})
+
+
+# ======================================================
+# MANAGER REJECT LEAVE
+# ======================================================
+@app.route("/manager_reject_leave", methods=["POST"])
+def manager_reject_leave():
+
+    if session.get("role") != "manager":
+        return jsonify({"status": "unauthorized"})
+
+    data = request.json
+    leave_id = data["id"]
+
+    leave = get_one("leaves", "id", leave_id)
+
+    if not leave:
+        return jsonify({"status": "not_found"})
+
+    update_data("leaves", "id", leave_id, {
+        "status": "Manager Rejected"
+    })
+
+    # ✅ NOTIFICATION
+    insert_data("notifications", {
+        "emp_id": leave["emp_id"],
+        "message": "❌ Your leave rejected by Manager",
+        "read": False,
+        "created_at": datetime.utcnow().isoformat()
+    })
+
+    return jsonify({"success": True})
 # ======================================================
 # YEARLY LEAVE DETAILS
 # ======================================================
@@ -355,7 +525,7 @@ def leave_details():
     docs = supabase.table("leaves") \
         .select("*") \
         .eq("emp_id", emp_id) \
-        .eq("status", "Approved") \
+        .in_("status", ["Approved","Manager Approved"]) \
         .execute().data
 
     for data in docs:
@@ -399,6 +569,7 @@ def reject_leave(leave_id):
 
     data = get_one("leaves", "id", leave_id)
 
+
     if not data:
         return redirect("/hr")
 
@@ -418,46 +589,79 @@ def reject_leave(leave_id):
 # ======================================================
 # APPLY LEAVE
 # ======================================================
-@app.route("/apply_leave",methods=["POST"])
+@app.route("/apply_leave", methods=["POST"])
 def apply_leave():
 
+    # 🔒 Check login
     if not session.get("emp_id"):
-        return jsonify({"status":"error","message":"Not logged in"})
+        return jsonify({"status": "error", "message": "Not logged in"})
 
     try:
         data = request.json
         emp_id = session.get("emp_id")
+        role = session.get("role")
 
+        # ===== DATE VALIDATION =====
         start = datetime.strptime(data["from"], "%Y-%m-%d")
         end = datetime.strptime(data["to"], "%Y-%m-%d")
 
         if end < start:
-            return jsonify({"status":"error","message":"Invalid date range"})
+            return jsonify({"status": "error", "message": "Invalid date range"})
 
         days = (end - start).days + 1
 
+        # ===== GET EMPLOYEE DETAILS =====
+        emp = get_one("employees", "emp_id", emp_id)
+
+        if not emp:
+            return jsonify({"status": "error", "message": "Employee not found"})
+
+        # ===== DECIDE APPROVER =====
+        to_id = None
+
+        if role == "employee":
+            to_id = emp.get("manager_id")
+
+        elif role == "manager":
+            to_id = emp.get("hr_id")
+
+        elif role == "hr":
+            to_id = emp.get("admin_id")
+
+        else:
+            return jsonify({"status": "error", "message": "Invalid role"})
+
+        # 🚨 SAFETY CHECK (IMPORTANT)
+        if not to_id:
+            return jsonify({
+                "status": "error",
+                "message": "Approver not assigned (check employees table)"
+            })
+
+        # ===== INSERT INTO DATABASE =====
         result = insert_data("leaves", {
-            "emp_id":emp_id,
-            "from_date":data["from"],
-            "to_date":data["to"],
-            "reason":data.get("reason",""),
-            "type":data.get("type",""),
-            "part":data.get("part",""),
-            "comments":data.get("comments",""),
-            "days":days,
-            "status":"Pending",
-            "applied_on":datetime.utcnow().isoformat()
+            "emp_id": emp_id,
+            "to_id": to_id,                # 🔥 CRITICAL FIELD
+            "role": role,
+            "from_date": data["from"],
+            "to_date": data["to"],
+            "reason": data.get("reason", ""),
+            "type": data.get("type", ""),
+            "part": data.get("part", ""),
+            "comments": data.get("comments", ""),
+            "days": days,
+            "status": "Pending",
+            "applied_on": datetime.utcnow().isoformat()
         })
 
         if not result:
-            return jsonify({"status":"error","message":"Database insert failed"})
+            return jsonify({"status": "error", "message": "Insert failed"})
 
-        return jsonify({"status":"success"})
+        return jsonify({"status": "success", "message": "Leave applied successfully"})
 
     except Exception as e:
-        print("APPLY LEAVE ERROR:", str(e))
-        return jsonify({"status":"error","message":str(e)})
-
+        print("ERROR APPLY LEAVE:", str(e))
+        return jsonify({"status": "error", "message": str(e)})
 # ======================================================
 # APPROVE LEAVE
 # ======================================================
@@ -467,31 +671,53 @@ def approve_leave(leave_id):
     if session.get("role") != "hr":
         return redirect("/login")
 
-    reason = request.form["reason"]
+    reason = request.form.get("reason", "")
 
-    data = get_one("leaves", "id", leave_id)
+    # ✅ GET LEAVE
+    leave = get_one("leaves", "id", leave_id)
 
-    if not data:
+    if not leave:
         return redirect("/hr")
 
+    # ✅ GET HR DETAILS
+    hr = get_one("employees", "emp_id", session.get("emp_id"))
+
+    if not hr:
+        return redirect("/hr")
+
+    # 🚨 CHECK ADMIN ASSIGNED
+    if not hr.get("admin_id"):
+        return "Admin not assigned to HR"
+
+    # 🔥 UPDATE → SEND TO ADMIN
     update_data(
         "leaves",
         "id",
         leave_id,
         {
-            "status": "Approved",
+            "status": "HR Approved",
+            "to_id": hr.get("admin_id"),   # 🔥 IMPORTANT
             "hr_reason": reason
         }
     )
 
+    # ✅ NOTIFICATION TO EMPLOYEE
     insert_data("notifications", {
-        "emp_id": data["emp_id"],
-        "message": "✅ Your leave has been approved",
+        "emp_id": leave["emp_id"],
+        "message": "✅ Your leave approved by HR",
         "read": False,
         "created_at": datetime.utcnow().isoformat()
     })
 
     return redirect("/hr")
+
+
+
+
+
+
+
+
 # ======================================================
 # CHANGE PASSWORD
 # ======================================================
@@ -511,6 +737,60 @@ def change_password():
 
     return jsonify({"status":"failed"})
 
+
+# ======================================================
+# ADMIN HR LEAVE REQUESTS
+# ======================================================
+
+@app.route("/admin_hr_leaves")
+def admin_hr_leaves():
+
+    if session.get("role") != "admin":
+        return jsonify([])
+
+    admin_id = session.get("emp_id")
+
+    docs = supabase.table("leaves") \
+        .select("*") \
+        .eq("to_id", admin_id) \
+        .eq("status", "Pending") \
+        .execute().data
+
+    return jsonify(docs)
+
+
+@app.route("/admin_approve_leave", methods=["POST"])
+def admin_approve_leave():
+
+    if session.get("role") != "admin":
+        return jsonify({"status": "unauthorized"})
+
+    data = request.json
+    leave_id = data["id"]
+
+    update_data("leaves", "id", leave_id, {
+        "status": "Approved",
+        "to_id": None
+    })
+
+    return jsonify({"status": "approved"})
+
+
+@app.route("/admin_reject_leave", methods=["POST"])
+def admin_reject_leave():
+
+    if session.get("role") != "admin":
+        return jsonify({"status": "unauthorized"})
+
+    data = request.json
+    leave_id = data["id"]
+
+    update_data("leaves", "id", leave_id, {
+        "status": "Rejected",
+        "to_id": None
+    })
+
+    return jsonify({"status": "rejected"})
 
 # ======================================================
 # DELETE PENDING LEAVE (EMPLOYEE)
@@ -631,8 +911,8 @@ def add_notification():
     data = request.json
     emp_id = session.get("emp_id")
 
-    today = data.get("date")
-    ntype = data.get("type")
+    today = datetime.utcnow().strftime("%Y-%m-%d")
+    ntype = data.get("type","general")
 
     existing = supabase.table("notifications") \
         .select("id") \
@@ -704,6 +984,52 @@ def admin_summary():
 
 
 
+@app.route("/register_face", methods=["POST"])
+def register_face():
+
+    try:
+        if not session.get("emp_id"):
+            return jsonify({"success": False, "msg": "Login required"})
+
+        data = request.json
+        emp_id = session.get("emp_id")
+
+        image = data.get("image")
+
+        if not image:
+            return jsonify({"success": False, "msg": "No image received"})
+
+        # ✅ REMOVE HEADER PART
+        if "," not in image:
+            return jsonify({"success": False, "msg": "Invalid image format"})
+        image_data = image.split(",")[1]
+
+        # ✅ DECODE BASE64
+        img_bytes = base64.b64decode(image_data)
+
+        file_name = f"{emp_id}.jpg"
+
+        # ✅ UPLOAD TO SUPABASE (NO OPENCV)
+        supabase.storage.from_("faces").upload(
+            path=file_name,
+            file=img_bytes,
+            file_options={"content-type": "image/jpeg", "upsert": "true"}
+        )
+
+        # ✅ PUBLIC URL
+        public_url = f"{SUPABASE_URL}/storage/v1/object/public/faces/{file_name}"
+
+        # ✅ SAVE IN DATABASE
+        supabase.table("employees").update({
+            "face_url": public_url
+        }).eq("emp_id", emp_id).execute()
+
+        return jsonify({"success": True})
+
+    except Exception as e:
+        print("ERROR:", e)
+        return jsonify({"success": False, "msg": str(e)})
+    
 
 # ======================================================
 # ADMIN YEARLY PERCENTAGE (REAL DATA)
@@ -1036,6 +1362,143 @@ def logout():
     session.clear()
     return redirect("/login")
 
+
+
+
+from math import radians, sin, cos, sqrt, atan2
+
+OFFICE_LAT = 17.661489
+OFFICE_LON = 74.043869
+MAX_DISTANCE = 115000
+
+def calculate_distance(lat1,lon1,lat2,lon2):
+
+    R = 6371000
+
+    dlat = radians(lat2-lat1)
+    dlon = radians(lon2-lon1)
+
+    a = sin(dlat/2)**2 + cos(radians(lat1))*cos(radians(lat2))*sin(dlon/2)**2
+    c = 2 * atan2(sqrt(a),sqrt(1-a))
+
+    return R*c
+
+
+@app.route("/verify_location",methods=["POST"])
+def verify_location():
+
+    data=request.json
+
+    try:
+        lat = float(data.get("lat"))
+        lon = float(data.get("lon"))
+    except:
+        return jsonify({"location": False, "device": False})
+    
+    device=data["device"]
+
+    emp_id=session.get("emp_id")
+
+    user=get_one("users","emp_id",emp_id)
+
+    if not user:
+        return jsonify({"location":False,"device":False})
+
+    # device verify
+    if not user.get("device_id"):
+        update_data("users","emp_id",emp_id,{"device_id":device})
+
+    elif user["device_id"]!=device:
+        return jsonify({"location":False,"device":False})
+
+    dist=calculate_distance(lat,lon,OFFICE_LAT,OFFICE_LON)
+
+    print("Distance from office:", dist)
+
+    if dist > MAX_DISTANCE:
+        return jsonify({
+            "location":False,
+            "device":True,
+            "distance":round(dist)
+        })
+        
+
+    return jsonify({"location":True,"device":True})
+
+
+
+
+@app.route("/mark_attendance", methods=["POST"])
+def mark_attendance():
+
+    if not session.get("emp_id"):
+        return jsonify({"success": False, "msg": "Login required"})
+
+    data = request.json
+    emp_id = session.get("emp_id")
+
+    # ===== STEP 1: VERIFY LOCATION =====
+    loc = requests.post("http://localhost:5000/verify_location", json={
+        "lat": data["lat"],
+        "lon": data["lon"],
+        "device": data["device"]
+    }).json()
+
+    if not loc["location"] or not loc["device"]:
+        return jsonify({"success": False, "msg": "Location/Device failed"})
+
+    # ===== STEP 2: VERIFY FACE =====
+    image = data["image"]
+
+    image_data = image.split(",")[1]
+    img_bytes = base64.b64decode(image_data)
+
+    np_arr = np.frombuffer(img_bytes, np.uint8)
+    img = cv2.imdecode(np_arr, cv2.IMREAD_COLOR)
+
+    emp = get_one("employees", "emp_id", emp_id)
+
+    if not emp.get("face_url"):
+        return jsonify({"success": False, "msg": "Face not registered"})
+
+    response = requests.get(emp["face_url"])
+    stored = np.frombuffer(response.content, np.uint8)
+    stored = cv2.imdecode(stored, cv2.IMREAD_COLOR)
+
+    result = DeepFace.verify(img, stored, enforce_detection=False)
+
+    if not result["verified"]:
+        return jsonify({"success": False, "msg": "Face mismatch"})
+
+    # ===== STEP 3: ATTENDANCE =====
+    today = datetime.now().strftime("%Y-%m-%d")
+    now_time = datetime.now().strftime("%H:%M:%S")
+
+    record = supabase.table("attendance") \
+        .select("*") \
+        .eq("emp_id", emp_id) \
+        .eq("date", today) \
+        .execute().data
+
+    if not record:
+        insert_data("attendance", {
+            "emp_id": emp_id,
+            "date": today,
+            "checkin": now_time,
+            "status": "Present"
+        })
+        return jsonify({"success": True, "type": "checkin"})
+
+    else:
+        if not record[0].get("checkout"):
+            update_data("attendance", "id", record[0]["id"], {
+                "checkout": now_time
+            })
+            return jsonify({"success": True, "type": "checkout"})
+
+        return jsonify({"success": True, "type": "done"})
+    
+    
 # ======================================================
 # RUN
 # ======================================================
