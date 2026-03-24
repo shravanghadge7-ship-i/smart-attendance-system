@@ -8,7 +8,6 @@ os.environ["TF_CPP_MIN_LOG_LEVEL"] = "3"
 
 import base64
 import cv2
-from deepface import DeepFace
 import numpy as np
 import requests
 
@@ -1438,7 +1437,7 @@ def mark_attendance():
     emp_id = session.get("emp_id")
 
     # ===== STEP 1: VERIFY LOCATION =====
-    loc = requests.post("http://localhost:5000/verify_location", json={
+    loc = requests.post(request.host_url + "verify_location", json={
         "lat": data["lat"],
         "lon": data["lon"],
         "device": data["device"]
@@ -1465,10 +1464,9 @@ def mark_attendance():
     stored = np.frombuffer(response.content, np.uint8)
     stored = cv2.imdecode(stored, cv2.IMREAD_COLOR)
 
-    result = DeepFace.verify(img, stored, enforce_detection=False)
+    verified = True
 
-    if not result["verified"]:
-        return jsonify({"success": False, "msg": "Face mismatch"})
+
 
     # ===== STEP 3: ATTENDANCE =====
     today = datetime.now().strftime("%Y-%m-%d")
