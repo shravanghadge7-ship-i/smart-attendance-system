@@ -5,5 +5,3 @@ gunicorn
 opencv-python
 numpy
 pillow
-deepface
-tensorflow-cpu
