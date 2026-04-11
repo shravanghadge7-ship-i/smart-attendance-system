@@ -1153,10 +1153,10 @@ box-shadow:0 6px 15px rgba(37,99,235,.4);
 
 <div id="menuBtn" onclick="toggle()">☰</div>
 
-<img src="https://cdn-icons-png.flaticon.com/512/5968/5968705.png">
+<img src="https://tse2.mm.bing.net/th/id/OIP.E9-DgcgoKsmkuxd2pCF5pAAAAA?pid=Api&P=0&h=180">
 
 <div class="company">
-<b>Mahendra Corporation Private Limited</b><br>
+<b>SMART ATTENDANCE SYSTEM</b><br>
 <span>| Year 2025-26</span>
 </div>
 
@@ -1565,9 +1565,7 @@ Loading...
 Leave Balance: <span id="leaveCount">21</span> / 21
 </div>
 
-<button onclick="startAttendance()" style="margin-bottom:15px">
-📸 Mark Attendance
-</button>
+
 
 <div class="calendar-header-new">
 
@@ -2458,7 +2456,7 @@ else if(h < 17) msg = "GOOD AFTERNOON 🌤️";
 else msg = "GOOD EVENING 🌙";
 
 document.getElementById("greetText").innerHTML =
-msg + "<br>WELCOME TO MAHENDRA CORPORATION";
+msg + "<br>WELCOME TO SMART ATTENDANCE SYSTEM";
 
 }
 
@@ -3482,101 +3480,6 @@ updateBellCount();
 });
 }
 
-function startAttendance(){
-
-navigator.geolocation.getCurrentPosition(function(position){
-
-let lat = position.coords.latitude;
-let lon = position.coords.longitude;
-
-fetch("/verify_location",{
-method:"POST",
-headers:{"Content-Type":"application/json"},
-body:JSON.stringify({
-lat:lat,
-lon:lon,
-device:getDeviceId()
-})
-})
-.then(r=>r.json())
-.then(data=>{
-
-if(!data.location){
-alert("❌ You are outside office location");
-return;
-}
-
-if(!data.device){
-alert("❌ Unauthorized device");
-return;
-}
-
-startCamera();
-
-});
-
-});
-}
-
-function getDeviceId(){
-
-let id = localStorage.getItem("device_id");
-
-if(!id){
-id = crypto.randomUUID();
-localStorage.setItem("device_id",id);
-}
-
-return id;
-}
-
-function startCamera(){
-
-navigator.mediaDevices.getUserMedia({video:true})
-.then(stream=>{
-
-let video=document.createElement("video");
-video.srcObject=stream;
-video.play();
-
-setTimeout(()=>{
-
-captureFace(video);
-
-},2000);
-
-});
-
-}
-
-function captureFace(video){
-
-let canvas=document.createElement("canvas");
-canvas.width=video.videoWidth;
-canvas.height=video.videoHeight;
-
-let ctx=canvas.getContext("2d");
-ctx.drawImage(video,0,0);
-
-let image=canvas.toDataURL("image/jpeg");
-
-fetch("/verify_face",{
-method:"POST",
-headers:{"Content-Type":"application/json"},
-body:JSON.stringify({image:image})
-})
-.then(r=>r.json())
-.then(data=>{
-
-if(data.success){
-alert("✅ Attendance Marked");
-}else{
-alert("❌ Face not recognized");
-}
-
-});
-
-}
 function loadManagerLeaves(){
 
 fetch("/hr")

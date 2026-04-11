@@ -1125,10 +1125,10 @@ display:block;
 
 <div id="menuBtn" onclick="toggle()">☰</div>
 
-<img src="https://cdn-icons-png.flaticon.com/512/5968/5968705.png">
+<img src="https://tse2.mm.bing.net/th/id/OIP.E9-DgcgoKsmkuxd2pCF5pAAAAA?pid=Api&P=0&h=180">
 
 <div class="company">
-<b>Mahendra Corporation Private Limited</b><br>
+<b>SMART ATTENDANCE SYSTEM</b><br>
 <span>| Year 2025-26</span>
 </div>
 
@@ -1383,15 +1383,7 @@ Loading...
 </div>
 
 </div>
-<button class="btn" onclick="registerFace()">📸 Register Face</button>
 
-<br><br>
-
-<video id="video" width="300" autoplay playsinline 
-style="border-radius:10px; display:none;"></video>
-<canvas id="canvas" style="display:none;"></canvas>
-
-<div id="faceStatus" style="margin-top:10px;"></div>
 </div>
 
 <div id="dashboard" class="section">
@@ -1429,9 +1421,7 @@ style="border-radius:10px; display:none;"></video>
 Leave Balance: <span id="leaveCount">21</span> / 21
 </div>
 
-<button onclick="startAttendance()" style="margin-bottom:15px">
-📸 Mark Attendance
-</button>
+
 
 <div class="calendar-header-new">
 
@@ -1605,12 +1595,12 @@ fetch("/profile_full")
 .then(r=>r.json())
 .then(d=>{
 
-window.joinDate = d.created_at ? new Date(d.created_at) : null;
+window.joinDate = d.join_date ? new Date(d.join_date) : null;
 
 if(window.joinDate){
 window.joinDate.setHours(0,0,0,0);
 }
-console.log("JOIN DATE:", window.joinDate);
+console.log("JOIN DATE:", window.joinDate); 
 
 v_emp.innerText = d.emp_id || "";
 v_name.innerText = d.name || "";
@@ -1962,28 +1952,33 @@ else if(hasAttendance && !isHoliday){
 
 else{
 
-let currentDate = new Date(date);
+let currentDate = new Date(
+  date.getFullYear(),
+  date.getMonth(),
+  date.getDate()
+);
 currentDate.setHours(0,0,0,0);
 
 /* ❌ BEFORE JOINING DATE */
 if(window.joinDate && currentDate < window.joinDate){
-status = `<div class="status">-</div>`;
+    status = `<div class="status">-</div>`;
 }
 
 /* Future date */
 else if(currentDate > todayDate){
-status = `<div class="status">-</div>`;
+    status = `<div class="status">-</div>`;
 }
 
 /* Today */
 else if(currentDate.getTime() === todayDate.getTime()){
-status = `<div class="status pendingTxt">Waiting</div>`;
+    status = `<div class="status pendingTxt">Waiting</div>`;
 }
 
 /* AFTER JOINING → THEN ABSENT */
 else{
-status = `<div class="status rejectedTxt">Absent</div>`;
+    status = `<div class="status rejectedTxt">Absent</div>`;
 }
+
 }
 
 cal.innerHTML+=`
@@ -2216,7 +2211,7 @@ else if(h < 17) msg = "GOOD AFTERNOON 🌤️";
 else msg = "GOOD EVENING 🌙";
 
 document.getElementById("greetText").innerHTML =
-msg + "<br>WELCOME TO MAHENDRA CORPORATION";
+msg + "<br>WELCOME TO SMART ATTENDANCE SYSTEM";
 
 }
 
@@ -3241,234 +3236,7 @@ updateBellCount();
 });
 }
 
-function startAttendance(){
 
-navigator.geolocation.getCurrentPosition(async pos => {
-
-let lat = pos.coords.latitude;
-let lon = pos.coords.longitude;
-let device = navigator.userAgent;
-
-let image = captureImage(); // your existing canvas code
-
-let res = await fetch("/mark_attendance", {
-method:"POST",
-headers:{"Content-Type":"application/json"},
-body: JSON.stringify({lat, lon, device, image})
-});
-
-let data = await res.json();
-alert(data.msg || data.type);
-
-});
-
-}
-
-function captureFace(video){
-
-let canvas = document.getElementById("canvas");
-let ctx = canvas.getContext("2d");
-
-canvas.width = video.videoWidth;
-canvas.height = video.videoHeight;
-
-ctx.drawImage(video, 0, 0);
-
-let image = canvas.toDataURL("image/jpeg");
-
-fetch("/verify_face",{
-method:"POST",
-headers:{"Content-Type":"application/json"},
-body:JSON.stringify({image:image})
-})
-.then(r=>r.json())
-.then(d=>{
-
-video.srcObject.getTracks().forEach(track=>track.stop());
-video.style.display="none";
-
-if(d.success){
-
-if(d.type==="checkin"){
-showToast("✅ Check-in Success");
-}
-else if(d.type==="checkout"){
-showToast("🚪 Check-out Success");
-}
-else{
-showToast("⚠ Already Marked");
-}
-
-}else{
-showToast("❌ "+d.msg);
-}
-
-})
-.catch(()=>{
-showToast("❌ Server error");
-});
-}
-
-
-function captureFace(video){
-
-let canvas = document.getElementById("canvas");
-let ctx = canvas.getContext("2d");
-
-canvas.width = video.videoWidth;
-canvas.height = video.videoHeight;
-
-ctx.drawImage(video, 0, 0);
-
-let image = canvas.toDataURL("image/jpeg");
-
-fetch("/verify_face",{
-method:"POST",
-headers:{"Content-Type":"application/json"},
-body:JSON.stringify({image:image})
-})
-.then(r=>r.json())
-.then(d=>{
-
-video.srcObject.getTracks().forEach(track=>track.stop());
-video.style.display="none";
-
-if(d.success){
-
-if(d.type==="checkin"){
-showToast("✅ Check-in Success");
-}
-else if(d.type==="checkout"){
-showToast("🚪 Check-out Success");
-}
-else{
-showToast("⚠ Already Marked");
-}
-
-}else{
-showToast("❌ "+d.msg);
-}
-
-})
-.catch(err=>{
-console.error(err);
-showToast("❌ Server error");
-});
-}
-
-
-
-function captureFace(video){
-
-let canvas = document.createElement("canvas");
-canvas.width = video.videoWidth;
-canvas.height = video.videoHeight;
-
-let ctx = canvas.getContext("2d");
-ctx.drawImage(video, 0, 0);
-
-let image = canvas.toDataURL("image/jpeg");
-
-// stop camera
-let tracks = video.srcObject.getTracks();
-tracks.forEach(track => track.stop());
-
-video.style.display = "none";  // hide after capture
-
-fetch("/verify_face", {
-method: "POST",
-headers: { "Content-Type": "application/json" },
-body: JSON.stringify({ image: image })
-})
-.then(r => r.json())
-.then(data => {
-
-if(data.success){
-
-    if(data.type === "checkin"){
-        showToast("✅ Check-in Successful");
-    }
-    else if(data.type === "checkout"){
-        showToast("✅ Check-out Successful");
-    }
-    else{
-        showToast("⚠ Already Marked Today");
-    }
-
-    refreshData();  // update calendar
-
-}else{
-    alert("❌ Face not recognized");
-}
-
-})
-.catch(err=>{
-    console.error(err);
-    alert("Server error");
-});
-
-}
-
-
-
-
-
-
-
-
-// 📸 Register Face
-function registerFace() {
-
-video = document.getElementById("video");
-
-navigator.mediaDevices.getUserMedia({video:true})
-.then(stream=>{
-
-video.srcObject = stream;
-
-video.onloadedmetadata = () => {
-
-let canvas = document.getElementById("canvas");
-let ctx = canvas.getContext("2d");
-
-canvas.width = video.videoWidth;
-canvas.height = video.videoHeight;
-
-setTimeout(()=>{
-
-ctx.drawImage(video, 0, 0);
-
-let image = canvas.toDataURL("image/jpeg");
-
-/* stop camera */
-video.srcObject.getTracks().forEach(t=>t.stop());
-
-fetch("/register_face", {
-method: "POST",
-headers: {"Content-Type": "application/json"},
-body: JSON.stringify({ image: image })
-})
-.then(res => res.json())
-.then(data => {
-
-if(data.success){
-alert("✅ Face Registered");
-location.reload();
-}else{
-alert("❌ " + (data.msg || "Failed"));
-}
-
-});
-
-},1500);
-
-};
-
-})
-.catch(()=>{
-alert("Camera not allowed");
-});
-}
 
 
 </script>

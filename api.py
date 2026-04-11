@@ -1383,118 +1383,11 @@ def calculate_distance(lat1,lon1,lat2,lon2):
     return R*c
 
 
-@app.route("/verify_location",methods=["POST"])
-def verify_location():
-
-    data=request.json
-
-    try:
-        lat = float(data.get("lat"))
-        lon = float(data.get("lon"))
-    except:
-        return jsonify({"location": False, "device": False})
-    
-    device=data["device"]
-
-    emp_id=session.get("emp_id")
-
-    user=get_one("users","emp_id",emp_id)
-
-    if not user:
-        return jsonify({"location":False,"device":False})
-
-    # device verify
-    if not user.get("device_id"):
-        update_data("users","emp_id",emp_id,{"device_id":device})
-
-    elif user["device_id"]!=device:
-        return jsonify({"location":False,"device":False})
-
-    dist=calculate_distance(lat,lon,OFFICE_LAT,OFFICE_LON)
-
-    print("Distance from office:", dist)
-
-    if dist > MAX_DISTANCE:
-        return jsonify({
-            "location":False,
-            "device":True,
-            "distance":round(dist)
-        })
-        
-
-    return jsonify({"location":True,"device":True})
 
 
 
 
-@app.route("/mark_attendance", methods=["POST"])
-def mark_attendance():
 
-    if not session.get("emp_id"):
-        return jsonify({"success": False, "msg": "Login required"})
-
-    data = request.json
-    emp_id = session.get("emp_id")
-
-    # ===== STEP 1: VERIFY LOCATION =====
-    loc = requests.post(request.host_url + "verify_location", json={
-        "lat": data["lat"],
-        "lon": data["lon"],
-        "device": data["device"]
-    }).json()
-
-    if not loc["location"] or not loc["device"]:
-        return jsonify({"success": False, "msg": "Location/Device failed"})
-
-    # ===== STEP 2: VERIFY FACE =====
-    image = data["image"]
-
-    image_data = image.split(",")[1]
-    img_bytes = base64.b64decode(image_data)
-
-    np_arr = np.frombuffer(img_bytes, np.uint8)
-    img = cv2.imdecode(np_arr, cv2.IMREAD_COLOR)
-
-    emp = get_one("employees", "emp_id", emp_id)
-
-    if not emp.get("face_url"):
-        return jsonify({"success": False, "msg": "Face not registered"})
-
-    response = requests.get(emp["face_url"])
-    stored = np.frombuffer(response.content, np.uint8)
-    stored = cv2.imdecode(stored, cv2.IMREAD_COLOR)
-
-    verified = True
-
-
-
-    # ===== STEP 3: ATTENDANCE =====
-    today = datetime.now().strftime("%Y-%m-%d")
-    now_time = datetime.now().strftime("%H:%M:%S")
-
-    record = supabase.table("attendance") \
-        .select("*") \
-        .eq("emp_id", emp_id) \
-        .eq("date", today) \
-        .execute().data
-
-    if not record:
-        insert_data("attendance", {
-            "emp_id": emp_id,
-            "date": today,
-            "checkin": now_time,
-            "status": "Present"
-        })
-        return jsonify({"success": True, "type": "checkin"})
-
-    else:
-        if not record[0].get("checkout"):
-            update_data("attendance", "id", record[0]["id"], {
-                "checkout": now_time
-            })
-            return jsonify({"success": True, "type": "checkout"})
-
-        return jsonify({"success": True, "type": "done"})
     
     
 # ======================================================

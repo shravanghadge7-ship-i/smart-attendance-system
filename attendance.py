@@ -1,204 +1,135 @@
 import cv2
-import pandas as pd
-from datetime import datetime, time
+import numpy as np
+from datetime import datetime
+from supabase import create_client
 import pyttsx3
-import threading
-import firebase_admin
-from firebase_admin import credentials, firestore
-import os
 
-# ================= SPEECH =================
+# =========================
+# 🔑 SUPABASE CONFIG
+# =========================
+url = "https://orrohkftvvhqogzvekrt.supabase.co"
+key = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9ycm9oa2Z0dnZocW9nenZla3J0Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3MjMzMDc3MiwiZXhwIjoyMDg3OTA2NzcyfQ.iQk9sI6FA7thWAB2eRiGO0b2_5uepfI_RnRuoacnZxU"
+supabase = create_client(url, key)
 
+# =========================
+# 🔊 TEXT TO SPEECH
+# =========================
 engine = pyttsx3.init()
-engine.setProperty("rate", 150)
+engine.setProperty('rate', 150)
+engine.setProperty('volume', 1.0)
 
 def speak(text):
-    def run():
-        engine.say(text)
-        engine.runAndWait()
-    threading.Thread(target=run, daemon=True).start()
+    engine.say(text)
+    engine.runAndWait()
 
-# ================= FIREBASE =================
+# =========================
+# 📥 LOAD USERS FROM DB
+# =========================
+res = supabase.table("users").select("*").execute()
+users = res.data
 
-if not firebase_admin._apps:
-    cred = credentials.Certificate("serviceAccountKey.json")
-    firebase_admin.initialize_app(cred)
+name_map = {}
 
-db = firestore.client()
+for u in users:
+    name_map[u["emp_id"]] = u.get("name", u["emp_id"])
 
-# ================= FACE MODEL =================
-
+# =========================
+# 🤖 LOAD FACE MODEL
+# =========================
 recognizer = cv2.face.LBPHFaceRecognizer_create()
-recognizer.read("trainer/face_trainer.yml")
-
-label_map = pd.read_csv("label_map.csv")
-employees = pd.read_csv("employees.csv")
+recognizer.read("trainer.yml")
 
 face_detector = cv2.CascadeClassifier(
     cv2.data.haarcascades + "haarcascade_frontalface_default.xml"
 )
 
+# =========================
+# 🎥 START CAMERA
+# =========================
 cam = cv2.VideoCapture(0)
 
-# ================= SETTINGS =================
-
-COOLDOWN = 20
-MIN_WORK_SECONDS = 8 * 3600
-OFFICE_TIME = time(9, 30)
-
-last_seen = {}
-
-# ✅ NEW: stop multiple marking same day
-already_marked = {}
-
-CSV_FILE = "attendance_log.csv"
-
-# ================= CSV INIT =================
-
-if not os.path.exists(CSV_FILE):
-    pd.DataFrame(columns=[
-        "emp_id","name","date",
-        "checkin","checkout","status"
-    ]).to_csv(CSV_FILE,index=False)
-
-# ================= CSV HELPER =================
-
-def update_csv(emp, name, date, checkin="", checkout="", status=""):
-
-    df = pd.read_csv(CSV_FILE)
-    mask = (df.emp_id==emp) & (df.date==date)
-
-    if not mask.any():
-        df.loc[len(df)] = [emp,name,date,checkin,checkout,status]
-    else:
-        if checkout:
-            df.loc[mask,"checkout"] = checkout
-        df.loc[mask,"status"] = status
-
-    df.to_csv(CSV_FILE,index=False)
-
-# ================= MAIN LOOP =================
+print("📸 Attendance started... Press ESC to exit")
 
 while True:
-
-    ret, frame = cam.read()
+    ret, img = cam.read()
     if not ret:
         break
 
-    gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+    gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+    faces = face_detector.detectMultiScale(gray, 1.3, 5)
 
-    faces = face_detector.detectMultiScale(
-        gray,
-        scaleFactor=1.2,
-        minNeighbors=6,
-        minSize=(80,80)
-    )
+    for (x, y, w, h) in faces:
+        id, confidence = recognizer.predict(gray[y:y+h, x:x+w])
 
-    for (x,y,w,h) in faces:
+        # =========================
+        # ✅ FACE MATCH (HIGH ACCURACY)
+        # =========================
+        if confidence < 60:
+            emp_id = f"EMP{id:03d}"
+            name = name_map.get(emp_id, emp_id)
 
-        label, conf = recognizer.predict(gray[y:y+h,x:x+w])
+            print(f"✅ Recognized: {name} ({emp_id})")
 
-        # Accuracy check
-        if conf < 65:
+            today = datetime.now().strftime("%Y-%m-%d")
+            now_time = datetime.now().strftime("%H:%M:%S")
 
-            emp = str(label_map[label_map.Label==label].iloc[0]["EmpID"])
-            empdata = employees[employees.EmpID==emp].iloc[0]
+            # =========================
+            # 🔍 CHECK ATTENDANCE
+            # =========================
+            res = supabase.table("attendance")\
+                .select("*")\
+                .eq("emp_id", emp_id)\
+                .eq("date", today)\
+                .execute()
 
-            now = datetime.now()
-            today = now.strftime("%Y-%m-%d")
-            current_time = now.strftime("%H:%M:%S")
-
-            # ================= DETECTION CONTROL =================
-
-            # cooldown protection
-            if emp in last_seen and (now-last_seen[emp]).seconds < COOLDOWN:
-                continue
-
-            # stop detection after completed
-            if emp in already_marked and already_marked[emp] == today:
-                continue
-
-            last_seen[emp] = now
-
-            # ================= FIREBASE CHECK =================
-
-            docs = db.collection("attendance") \
-                .where("emp_id","==",emp) \
-                .where("date","==",today) \
-                .stream()
-
-            records = list(docs)
-
-            # ================= CHECK-IN =================
-            if not records:
-
-                status = "Late" if now.time()>OFFICE_TIME else "On Time"
-
-                db.collection("attendance").add({
-                    "emp_id": emp,
-                    "name": empdata.Name,
-                    "department": empdata.Department,
+            # =========================
+            # 🟢 CHECK-IN
+            # =========================
+            if len(res.data) == 0:
+                supabase.table("attendance").insert({
+                    "emp_id": emp_id,
                     "date": today,
-                    "checkin": current_time,
-                    "checkout": "",
-                    "status": status,
-                    "timestamp": firestore.SERVER_TIMESTAMP
-                })
+                    "checkin": now_time,
+                    "status": "Present"
+                }).execute()
 
-                update_csv(emp, empdata.Name, today,
-                           checkin=current_time,
-                           status=status)
+                print("🟢 Check-in marked")
+                speak(f"Welcome {name}, check in successful")
 
-                speak(empdata.Name + " checked in")
-
-            # ================= CHECK-OUT =================
+            # =========================
+            # 🔴 CHECK-OUT
+            # =========================
             else:
+                record = res.data[0]
 
-                doc = records[0]
-                data = doc.to_dict()
+                if record["checkout"] is None:
+                    supabase.table("attendance")\
+                        .update({
+                            "checkout": now_time
+                        })\
+                        .eq("id", record["id"])\
+                        .execute()
 
-                if data["checkout"] == "":
+                    print("🔴 Check-out marked")
+                    speak(f"Goodbye {name}, check out successful")
 
-                    checkin_time = datetime.strptime(
-                        data["checkin"], "%H:%M:%S"
-                    )
+                else:
+                    print("⚠ Already checked out")
+                    speak(f"{name}, attendance already completed")
 
-                    checkin_datetime = now.replace(
-                        hour=checkin_time.hour,
-                        minute=checkin_time.minute,
-                        second=checkin_time.second
-                    )
+            # =========================
+            # EXIT AFTER SUCCESS
+            # =========================
+            cam.release()
+            cv2.destroyAllWindows()
+            exit()
 
-                    worked_seconds = (now - checkin_datetime).seconds
+    # =========================
+    # 🖥️ SHOW CAMERA
+    # =========================
+    cv2.imshow("Attendance System", img)
 
-                    # allow checkout after 8 hours
-                    if worked_seconds >= MIN_WORK_SECONDS:
-
-                        db.collection("attendance") \
-                          .document(doc.id) \
-                          .update({
-                              "checkout": current_time,
-                              "status": "Completed"
-                          })
-
-                        update_csv(emp, empdata.Name, today,
-                                   checkout=current_time,
-                                   status="Completed")
-
-                        # ✅ LOCK EMPLOYEE FOR TODAY
-                        already_marked[emp] = today
-
-                        speak(empdata.Name + " checked out")
-
-            # ================= UI DRAW =================
-
-            cv2.rectangle(frame,(x,y),(x+w,y+h),(0,180,0),2)
-            cv2.putText(frame, empdata.Name,(x,y-10),
-                        cv2.FONT_HERSHEY_SIMPLEX,0.7,(0,180,0),2)
-
-    cv2.imshow("Smart Attendance System",frame)
-
-    if cv2.waitKey(1)==27:
+    if cv2.waitKey(1) == 27:  # ESC key
         break
 
 cam.release()
