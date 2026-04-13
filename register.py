@@ -14,7 +14,7 @@ supabase = create_client(url, key)
 # 👤 USER INPUT
 # =========================
 name = input("Enter Name: ")
-emp_id = input("Enter Employee ID (EMP001): ").upper()
+emp_id = input("Enter Employee ID : ").upper()
 password = input("Enter Password: ")
 role = input("Enter Role (employee/hr/manager): ").lower()
 
